@@ -5,6 +5,9 @@ from datetime import datetime
 from ib_broker import *
 import credentials
 from openpyxl import load_workbook
+import nest_asyncio
+
+nest_asyncio.apply()
 
 class IBRKExcel:
     def __init__(self):
@@ -20,7 +23,7 @@ class IBRKExcel:
         self.current_time    = datetime.now().time()
         # self.df = pd.read_excel(self.path, sheet_name="Sheet6")  # Replace with your file path
 
-    def check_excel_changes(self):
+    async def check_excel_changes(self):
         new_data   = pd.read_excel(self.path, sheet_name='Sheet6')
         # new_data = pd.read_csv(self.excel_url)
         new_length = len(new_data)
@@ -31,21 +34,21 @@ class IBRKExcel:
             return True
         return False
 
-    def connection_show(self) -> bool:
+    async def connection_show(self) -> bool:
         host, port = credentials.host, credentials.port
         self.client = IB()
         self.ib = self.client
         connection_print = self.client.connect(host=host, port=port, clientId=13, timeout=60)
         print(connection_print)
 
-    def format_date_ddmmyyyy(self,var):
+    async def format_date_ddmmyyyy(self,var):
         date,timep = var.split(" ")
         year,day,month = date.split('-')
         formatted_date = f"{year}{month.zfill(2)}"
         return str(formatted_date)
     
-    def check_for_new_positions(self): # put this in async
-        if self.check_excel_changes():
+    async def check_for_new_positions(self): # put this in async
+        if await self.check_excel_changes():
             last_row           = self.excel_data.iloc[-1]
             self.symbol        = 'N225M'
             self.exchange      = 'OSE.JPN' 
@@ -72,7 +75,7 @@ class IBRKExcel:
                 year,day,month = date.split('-')
                 formatted_date = f"{year}{month.zfill(2)}"
                 contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                if self.strike_type == "PE" and self.trigger_level<self.get_current_market_price_futures(contract):
+                if self.strike_type == "PE" and self.trigger_level< await self.get_current_market_price_futures(contract):
                 # if self.strike_type == "PE":
                     if self.entry_type == "LIMIT":
                         for _ in range(0,int(self.qty/self.slicing),1):
@@ -82,13 +85,14 @@ class IBRKExcel:
                             formatted_date = f"{year}{month.zfill(2)}"
                             # print(formatted_date)
                             self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                            # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
-                            self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+                            self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+                            # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
                             self.order.transmit = True
                             self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                             print(self.order_details)
                             print("The order has been placed")
-                            time.sleep(self.time_interval)
+                            # time.sleep(self.time_interval)
+                            await asyncio.sleep(self.time_interval)
                     else:
                         for _ in range(0,int(self.qty/self.slicing),1):
                             datevar = self.expiry
@@ -97,15 +101,16 @@ class IBRKExcel:
                             formatted_date = f"{year}{month.zfill(2)}"
                             print(formatted_date)
                             self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                            # self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
-                            self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
+                            self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
+                            # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
                             self.order.transmit = True
                             self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                             print(self.order_details)
                             print("The order has been placed")
-                            time.sleep(self.time_interval)
+                            # time.sleep(self.time_interval)
+                            await asyncio.sleep(self.time_interval)
 
-            elif self.strike_type == "CE" and self.trigger_level>self.get_current_market_price_futures(contract):
+            elif self.strike_type == "CE" and self.trigger_level> await self.get_current_market_price_futures(contract):
                 # elif self.strike_type == "CE":
                     if self.entry_type == "LIMIT":
                         for _ in range(0,int(self.qty/self.slicing),1):
@@ -114,13 +119,14 @@ class IBRKExcel:
                             year,day,month = date.split('-')
                             formatted_date = f"{year}{month.zfill(2)}"
                             self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                            # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
-                            self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+                            self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+                            # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
                             self.order.transmit = True
                             self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                             print(self.order_details)
                             print("The order has been placed")
-                            time.sleep(self.time_interval)
+                            # time.sleep(self.time_interval)
+                            await asyncio.sleep(self.time_interval)
                     else:
                         for _ in range(0,int(self.qty/self.slicing),1):
                             datevar = self.expiry
@@ -129,17 +135,18 @@ class IBRKExcel:
                             formatted_date = f"{year}{month.zfill(2)}"
                             print(formatted_date)
                             self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                            # self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
-                            self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
+                            self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
+                            # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
                             self.order.transmit = True
                             self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                             print(self.order_details)
                             print("The order has been placed")
-                            time.sleep(self.time_interval)
+                            # time.sleep(self.time_interval)
+                            await asyncio.sleep(self.time_interval)
             else:
                     print("The trigger price has not being triggered")
 
-    def get_current_market_price_futures(self, contract): 
+    async def get_current_market_price_futures(self, contract): 
         """
         Fetches the current market price of the given futures contract.
         """
@@ -154,11 +161,11 @@ class IBRKExcel:
         print(ticker.last)
         return None
     
-    def show_details(self):
+    async def show_details(self):
         result = self.ib.reqOpenOrders()
         return result
     
-    def check_for_tp_sl(self, current_price, target_price,stop_loss,action):
+    async def check_for_tp_sl(self, current_price, target_price,stop_loss,action):
         if action == 'PE':
             if current_price >= target_price:  # Target Price hit
                 return "SELL"
@@ -172,7 +179,7 @@ class IBRKExcel:
                 return "BUY"
         return None
 
-    def monitor_tp_sl(self): # put this in async
+    async def monitor_tp_sl(self): # put this in async
         self.df = pd.read_excel(self.path, sheet_name="Sheet6")  # Replace with your file path
         # print(self.df)
         for i in range(len(self.df)):
@@ -189,10 +196,10 @@ class IBRKExcel:
                 # print(formatted_date)
                 # contract      = Future(symbol='N225M',exchange='OSE.JPN',lastTradeDateOrContractMonth='202503') # change this line
                 contract      = Future(symbol='N225M',exchange='OSE.JPN',lastTradeDateOrContractMonth=str(formatted_date))
-                current_price = self.get_current_market_price_futures(contract)
+                current_price = await self.get_current_market_price_futures(contract)
                 # print(current_price)
                 if current_price:
-                    action = self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
+                    action = await self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
                     if action is not None:  
                         order = MarketOrder(action='SELL', totalQuantity=str(self.df['Qty'].iloc[i]))
                         order.transmit = True
@@ -213,9 +220,9 @@ class IBRKExcel:
                 formatted_date = f"{year}{month.zfill(2)}"
 
                 contract      = Future(symbol='N225M',exchange='OSE.JPN',lastTradeDateOrContractMonth=str(formatted_date)) # change this line
-                current_price = self.get_current_market_price_futures(contract)
+                current_price = await self.get_current_market_price_futures(contract)
                 if current_price:
-                    action = self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
+                    action = await self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
                     if action is not None:  
                         order = MarketOrder(action='BUY', totalQuantity=str(self.df['Qty'].iloc[i]))
                         order.transmit = True
@@ -228,7 +235,7 @@ class IBRKExcel:
         with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             self.df.to_excel(writer, sheet_name="Sheet6", index=False)
     
-    def new_auto_square_off(self): # put this in async
+    async def new_auto_square_off(self): # put this in async
         self.df = pd.read_excel(self.path, sheet_name="Sheet6")
         df = self.df
         current_time = datetime.now().strftime("%H:%M")
@@ -257,27 +264,26 @@ class IBRKExcel:
                 print("Positions are empty")
         else:
             print("The time is not for closing the market is not yet")
-            print(positions)
+            # print(positions)
 
         with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             self.df.to_excel(writer, sheet_name="Sheet6", index=False)
 
-    def run(self):
-        self.connection_show()
+    async def run(self):
+        await self.connection_show()
         while True:
-            self.check_for_new_positions() # working fine 
+            await asyncio.gather(self.check_for_new_positions(),self.new_auto_square_off(),self.monitor_tp_sl())
+            # self.check_for_new_positions() # working fine 
             # self.new_auto_square_off() # working fine 
             # result = self.show_details() # working fine
             # print(result) # working
             # self.monitor_tp_sl() # working fine
-            time.sleep(5)
-
-def main():
-    session = IBRKExcel()
-    session.run()
+            # time.sleep(5)
+            await asyncio.sleep(5)
 
 if __name__ == "__main__":
-    main()
+    session = IBRKExcel()
+    asyncio.run(session.run())
 
 # fix async the rest is good 
 
