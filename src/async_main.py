@@ -38,7 +38,8 @@ class IBRKExcel:
         host, port = credentials.host, credentials.port
         self.client = IB()
         self.ib = self.client
-        connection_print = self.client.connect(host=host, port=port, clientId=13, timeout=60)
+        # connection_print = self.client.connect(host=host, port=port, clientId=13, timeout=60)
+        connection_print = self.client.connect(host=host,port=port,clientId=13,account='DU9727656',timeout=60)
         print(connection_print)
 
     async def format_date_ddmmyyyy(self,var):
@@ -49,6 +50,7 @@ class IBRKExcel:
     
     async def check_for_new_positions(self): # put this in async
         if await self.check_excel_changes():
+            print("a change on the excel has been made")
             last_row           = self.excel_data.iloc[-1]
             self.symbol        = 'N225M'
             self.exchange      = 'OSE.JPN' 
@@ -87,6 +89,7 @@ class IBRKExcel:
                             self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                             self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
                             # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+                            self.order.account = 'DU9727656'
                             self.order.transmit = True
                             self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                             print(self.order_details)
@@ -103,6 +106,7 @@ class IBRKExcel:
                             self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                             self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
                             # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
+                            self.order.account = 'DU9727656'
                             self.order.transmit = True
                             self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                             print(self.order_details)
@@ -121,6 +125,7 @@ class IBRKExcel:
                             self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                             self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
                             # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+                            self.order.account = 'DU9727656'
                             self.order.transmit = True
                             self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                             print(self.order_details)
@@ -137,6 +142,7 @@ class IBRKExcel:
                             self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                             self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
                             # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
+                            self.order.account = 'DU9727656'
                             self.order.transmit = True
                             self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                             print(self.order_details)
@@ -145,6 +151,8 @@ class IBRKExcel:
                             await asyncio.sleep(self.time_interval)
             else:
                     print("The trigger price has not being triggered")
+        else:
+            print("No changes in excel")
 
     async def get_current_market_price_futures(self, contract): 
         """
@@ -202,6 +210,7 @@ class IBRKExcel:
                     action = await self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
                     if action is not None:  
                         order = MarketOrder(action='SELL', totalQuantity=str(self.df['Qty'].iloc[i]))
+                        order.account = 'DU9727656'
                         order.transmit = True
                         result = self.client.placeOrder(contract, order)
                         print(result)
@@ -225,6 +234,7 @@ class IBRKExcel:
                     action = await self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
                     if action is not None:  
                         order = MarketOrder(action='BUY', totalQuantity=str(self.df['Qty'].iloc[i]))
+                        order.account = 'DU9727656'
                         order.transmit = True
                         result = self.client.placeOrder(contract, order)
                         print(result)
@@ -240,7 +250,7 @@ class IBRKExcel:
         df = self.df
         current_time = datetime.now().strftime("%H:%M")
         positions = self.client.positions()
-        if current_time == "22:23":
+        if current_time == "13:45":
             if positions:
                 for i in range(len(df)):
                     if self.df.loc[i,'Activation'] == 1:
@@ -257,12 +267,14 @@ class IBRKExcel:
                         else:
                             current_action = 'SELL'
                         order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
+                        order.account = 'DU9727656'
                         order.transmit = True
                         result = self.client.placeOrder(contract, order)
                         self.df.loc[i, 'Activation'] = 0
             else:
                 print("Positions are empty")
         else:
+            # await asyncio.sleep(10)
             print("The time is not for closing the market is not yet")
             # print(positions)
 
@@ -279,7 +291,7 @@ class IBRKExcel:
             # print(result) # working
             # self.monitor_tp_sl() # working fine
             # time.sleep(5)
-            await asyncio.sleep(5)
+            await asyncio.sleep(10)
 
 if __name__ == "__main__":
     session = IBRKExcel()
