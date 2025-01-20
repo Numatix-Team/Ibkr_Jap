@@ -173,7 +173,7 @@ class IBRKExcel:
         result = self.ib.reqOpenOrders()
         return result
     
-    async def check_for_tp_sl(self, current_price, target_price,stop_loss,action):
+    async def check_for_tp_sl(self, current_price, target_price,stop_loss,action): # function is corrected
         if action == 'PE':
             if current_price >= target_price:  # Target Price hit
                 return "SELL"
@@ -181,9 +181,9 @@ class IBRKExcel:
                 return "SELL"
 
         elif action == 'CE':
-            if current_price >= target_price:  # Target Price hit
+            if current_price <= target_price:  # corrected
                 return "BUY"
-            elif current_price <= stop_loss:  # Stop Loss hit
+            elif current_price >= stop_loss:  # corrected
                 return "BUY"
         return None
 
@@ -214,7 +214,8 @@ class IBRKExcel:
                         order.transmit = True
                         result = self.client.placeOrder(contract, order)
                         print(result)
-                        self.df.loc[i, 'Activation'] = 0  
+                        self.df.loc[i, 'Activation'] = 0
+                        print("One position is being closed")  
                     else:
                         print("No profit/loss is triggered")
 
