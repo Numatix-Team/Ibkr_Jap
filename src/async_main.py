@@ -48,109 +48,225 @@ class IBRKExcel:
         formatted_date = f"{year}{month.zfill(2)}"
         return str(formatted_date)
     
+    # async def check_for_new_positions(self): # put this in async
+    #     if await self.check_excel_changes():
+    #         print("a change on the excel has been made")
+    #         last_row           = self.excel_data.iloc[-1]
+    #         self.symbol        = 'N225M'
+    #         self.exchange      = 'OSE.JPN' 
+    #         self.trigger_level = last_row['Trigger_Level_High_Low']
+    #         self.entry_type    = last_row['Entry_Type']
+    #         self.entry_strike  = last_row['Entry_Strike']
+    #         self.strike_type   = last_row['Strike_Type']
+    #         self.expiry        = str(last_row['Expiry'])
+    #         self.target        = last_row['Target']
+    #         self.stop_loss     = last_row['Stop_Loss']
+    #         self.qty           = last_row['Qty']
+    #         self.slicing       = last_row['Slicing']
+    #         self.time_interval = last_row['Time_Interval']
+    #         self.activation    = last_row['Activation']
+    #         if self.strike_type == 'CE':
+    #             self.side = 'SELL'
+    #         else:
+    #             self.side = 'BUY' 
+
+    #         if self.activation == 1:
+
+    #             datevar = self.expiry
+    #             date,timep = datevar.split(' ')
+    #             year,day,month = date.split('-')
+    #             formatted_date = f"{year}{month.zfill(2)}"
+    #             contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+    #             if self.strike_type == "PE" and self.trigger_level< await self.get_current_market_price_futures(contract):
+    #             # if self.strike_type == "PE":
+    #                 if self.entry_type == "LIMIT":
+    #                     for _ in range(0,int(self.qty/self.slicing),1):
+    #                         datevar = self.expiry
+    #                         date,timep = datevar.split(' ')
+    #                         year,day,month = date.split('-')
+    #                         formatted_date = f"{year}{month.zfill(2)}"
+    #                         # print(formatted_date)
+    #                         self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+    #                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+    #                         # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+    #                         self.order.account = 'DU9727656'
+    #                         self.order.transmit = True
+    #                         self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+    #                         print(self.order_details)
+    #                         print("The order has been placed")
+    #                         # time.sleep(self.time_interval)
+    #                         await asyncio.sleep(self.time_interval)
+    #                 else:
+    #                     for _ in range(0,int(self.qty/self.slicing),1):
+    #                         datevar = self.expiry
+    #                         date,timep = datevar.split(' ')
+    #                         year,day,month = date.split('-')
+    #                         formatted_date = f"{year}{month.zfill(2)}"
+    #                         print(formatted_date)
+    #                         self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+    #                         self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
+    #                         # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
+    #                         self.order.account = 'DU9727656'
+    #                         self.order.transmit = True
+    #                         self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+    #                         print(self.order_details)
+    #                         print("The order has been placed")
+    #                         # time.sleep(self.time_interval)
+    #                         await asyncio.sleep(self.time_interval)
+
+    #         elif self.strike_type == "CE" and self.trigger_level> await self.get_current_market_price_futures(contract):
+    #             # elif self.strike_type == "CE":
+    #                 if self.entry_type == "LIMIT":
+    #                     for _ in range(0,int(self.qty/self.slicing),1):
+    #                         datevar = self.expiry
+    #                         date,timep = datevar.split(' ')
+    #                         year,day,month = date.split('-')
+    #                         formatted_date = f"{year}{month.zfill(2)}"
+    #                         self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+    #                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+    #                         # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+    #                         self.order.account = 'DU9727656'
+    #                         self.order.transmit = True
+    #                         self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+    #                         print(self.order_details)
+    #                         print("The order has been placed")
+    #                         # time.sleep(self.time_interval)
+    #                         await asyncio.sleep(self.time_interval)
+    #                 else:
+    #                     for _ in range(0,int(self.qty/self.slicing),1):
+    #                         datevar = self.expiry
+    #                         date,timep = datevar.split(' ')
+    #                         year,day,month = date.split('-')
+    #                         formatted_date = f"{year}{month.zfill(2)}"
+    #                         print(formatted_date)
+    #                         self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+    #                         self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
+    #                         # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
+    #                         self.order.account = 'DU9727656'
+    #                         self.order.transmit = True
+    #                         self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+    #                         print(self.order_details)
+    #                         print("The order has been placed")
+    #                         # time.sleep(self.time_interval)
+    #                         await asyncio.sleep(self.time_interval)
+    #         else:
+    #                 print("The trigger price has not being triggered")
+    #     else:
+    #         print("No changes in excel")
+
     async def check_for_new_positions(self): # put this in async
         if await self.check_excel_changes():
             print("a change on the excel has been made")
-            last_row           = self.excel_data.iloc[-1]
-            self.symbol        = 'N225M'
-            self.exchange      = 'OSE.JPN' 
-            self.trigger_level = last_row['Trigger_Level_High_Low']
-            self.entry_type    = last_row['Entry_Type']
-            self.entry_strike  = last_row['Entry_Strike']
-            self.strike_type   = last_row['Strike_Type']
-            self.expiry        = str(last_row['Expiry'])
-            self.target        = last_row['Target']
-            self.stop_loss     = last_row['Stop_Loss']
-            self.qty           = last_row['Qty']
-            self.slicing       = last_row['Slicing']
-            self.time_interval = last_row['Time_Interval']
-            self.activation    = last_row['Activation']
-            if self.strike_type == 'CE':
-                self.side = 'SELL'
-            else:
-                self.side = 'BUY' 
-
-            if self.activation == 1:
-
-                datevar = self.expiry
-                date,timep = datevar.split(' ')
-                year,day,month = date.split('-')
-                formatted_date = f"{year}{month.zfill(2)}"
-                contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                if self.strike_type == "PE" and self.trigger_level< await self.get_current_market_price_futures(contract):
-                # if self.strike_type == "PE":
-                    if self.entry_type == "LIMIT":
-                        for _ in range(0,int(self.qty/self.slicing),1):
-                            datevar = self.expiry
-                            date,timep = datevar.split(' ')
-                            year,day,month = date.split('-')
-                            formatted_date = f"{year}{month.zfill(2)}"
-                            # print(formatted_date)
-                            self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                            self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
-                            # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
-                            self.order.account = 'DU9727656'
-                            self.order.transmit = True
-                            self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                            print(self.order_details)
-                            print("The order has been placed")
-                            # time.sleep(self.time_interval)
-                            await asyncio.sleep(self.time_interval)
+            length   = len(pd.read_excel(self.path, sheet_name='Sheet6'))
+            for i in range(length):
+                if self.excel_data.loc[i,'Activation'] == 1:
+                    row           = self.excel_data.iloc[i]
+                    self.symbol        = 'N225M'
+                    self.exchange      = 'OSE.JPN' 
+                    self.trigger_level = row['Trigger_Level_High_Low']
+                    self.entry_type    = row['Entry_Type']
+                    self.entry_strike  = row['Entry_Strike']
+                    self.strike_type   = row['Strike_Type']
+                    self.expiry        = str(row['Expiry'])
+                    self.target        = row['Target']
+                    self.stop_loss     = row['Stop_Loss']
+                    self.qty           = row['Qty']
+                    self.slicing       = row['Slicing']
+                    self.time_interval = row['Time_Interval']
+                    self.activation    = row['Activation']
+                    if self.strike_type == 'CE':
+                        self.side = 'SELL'
                     else:
-                        for _ in range(0,int(self.qty/self.slicing),1):
-                            datevar = self.expiry
-                            date,timep = datevar.split(' ')
-                            year,day,month = date.split('-')
-                            formatted_date = f"{year}{month.zfill(2)}"
-                            print(formatted_date)
-                            self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                            self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
-                            # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
-                            self.order.account = 'DU9727656'
-                            self.order.transmit = True
-                            self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                            print(self.order_details)
-                            print("The order has been placed")
-                            # time.sleep(self.time_interval)
-                            await asyncio.sleep(self.time_interval)
+                        self.side = 'BUY' 
 
-            elif self.strike_type == "CE" and self.trigger_level> await self.get_current_market_price_futures(contract):
-                # elif self.strike_type == "CE":
-                    if self.entry_type == "LIMIT":
-                        for _ in range(0,int(self.qty/self.slicing),1):
-                            datevar = self.expiry
-                            date,timep = datevar.split(' ')
-                            year,day,month = date.split('-')
-                            formatted_date = f"{year}{month.zfill(2)}"
-                            self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                            self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
-                            # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
-                            self.order.account = 'DU9727656'
-                            self.order.transmit = True
-                            self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                            print(self.order_details)
-                            print("The order has been placed")
-                            # time.sleep(self.time_interval)
-                            await asyncio.sleep(self.time_interval)
+                    datevar = self.expiry
+                    date,timep = datevar.split(' ')
+                    year,day,month = date.split('-')
+                    formatted_date = f"{year}{month.zfill(2)}"
+                    contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+                    if self.strike_type == "PE" and self.trigger_level< await self.get_current_market_price_futures(contract):
+                        if self.entry_type == "LIMIT":
+                            for _ in range(0,int(self.qty/self.slicing),1):
+                                datevar = self.expiry
+                                date,timep = datevar.split(' ')
+                                year,day,month = date.split('-')
+                                formatted_date = f"{year}{month.zfill(2)}"
+                                self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+                                self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+                                # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+                                self.order.account = 'DU9727656'
+                                self.order.transmit = True
+                                self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                print(self.order_details)
+                                print("The order has been placed")
+                                self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
+                                with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                                    self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                                    # time.sleep(self.time_interval)
+                                await asyncio.sleep(self.time_interval)
+                        else:
+                            for _ in range(0,int(self.qty/self.slicing),1):
+                                datevar = self.expiry
+                                date,timep = datevar.split(' ')
+                                year,day,month = date.split('-')
+                                formatted_date = f"{year}{month.zfill(2)}"
+                                print(formatted_date)
+                                self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+                                self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
+                                # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
+                                self.order.account = 'DU9727656'
+                                self.order.transmit = True
+                                self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                print(self.order_details)
+                                print("The order has been placed")
+                                self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
+                                with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                                    self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                                    # time.sleep(self.time_interval)
+                                await asyncio.sleep(self.time_interval)
+
+                    elif self.strike_type == "CE" and self.trigger_level> await self.get_current_market_price_futures(contract):
+                        if self.entry_type == "LIMIT":
+                            for _ in range(0,int(self.qty/self.slicing),1):
+                                datevar = self.expiry
+                                date,timep = datevar.split(' ')
+                                year,day,month = date.split('-')
+                                formatted_date = f"{year}{month.zfill(2)}"
+                                self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+                                self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+                                # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
+                                self.order.account = 'DU9727656'
+                                self.order.transmit = True
+                                self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                print(self.order_details)
+                                print("The order has been placed")
+                                self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
+                                with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                                    self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                                    # time.sleep(self.time_interval)
+                                await asyncio.sleep(self.time_interval)
+                        else:
+                            for _ in range(0,int(self.qty/self.slicing),1):
+                                datevar = self.expiry
+                                date,timep = datevar.split(' ')
+                                year,day,month = date.split('-')
+                                formatted_date = f"{year}{month.zfill(2)}"
+                                print(formatted_date)
+                                self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+                                self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
+                                # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
+                                self.order.account = 'DU9727656'
+                                self.order.transmit = True
+                                self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                print(self.order_details)
+                                print("The order has been placed")
+                                self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
+                                with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                                    self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                                # time.sleep(self.time_interval)
+                                await asyncio.sleep(self.time_interval)
                     else:
-                        for _ in range(0,int(self.qty/self.slicing),1):
-                            datevar = self.expiry
-                            date,timep = datevar.split(' ')
-                            year,day,month = date.split('-')
-                            formatted_date = f"{year}{month.zfill(2)}"
-                            print(formatted_date)
-                            self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                            self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
-                            # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
-                            self.order.account = 'DU9727656'
-                            self.order.transmit = True
-                            self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                            print(self.order_details)
-                            print("The order has been placed")
-                            # time.sleep(self.time_interval)
-                            await asyncio.sleep(self.time_interval)
-            else:
-                    print("The trigger price has not being triggered")
+                        print("The trigger price has not being triggered")
         else:
             print("No changes in excel")
 
@@ -191,7 +307,7 @@ class IBRKExcel:
         self.df = pd.read_excel(self.path, sheet_name="Sheet6")  # Replace with your file path
         # print(self.df)
         for i in range(len(self.df)):
-            if self.df.loc[i,'Activation'] == 1 and self.df.loc[i,'Strike_Type'] == 'PE':
+            if self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Strike_Type'] == 'PE':
                 # print(self.df.loc[i,'Activation'])
                 # print(self.df.loc[i,'Strike_Type'])
                 datevar = self.df.loc[i, 'Expiry']
@@ -219,7 +335,7 @@ class IBRKExcel:
                     else:
                         print("No profit/loss is triggered")
 
-            elif self.df.loc[i,'Activation'] == 1 and self.df.loc[i,'Strike_Type'] == 'CE':
+            elif self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Strike_Type'] == 'CE':
 
                 datevar = self.df.loc[i, 'Expiry']
                 print(datevar)
@@ -251,10 +367,10 @@ class IBRKExcel:
         df = self.df
         current_time = datetime.now().strftime("%H:%M")
         positions = self.client.positions()
-        if current_time == "13:45":
+        if current_time == "10:20":
             if positions:
                 for i in range(len(df)):
-                    if self.df.loc[i,'Activation'] == 1:
+                    if self.df.loc[i,'Activation'] == -1:
                         datevar = self.df.loc[i, 'Expiry']
                         print(datevar)
                         # Ensure datevar is a string in 'YYYY-MM-DD' format
@@ -283,6 +399,7 @@ class IBRKExcel:
             self.df.to_excel(writer, sheet_name="Sheet6", index=False)
 
     async def run(self):
+        print("The process has started")
         await self.connection_show()
         while True:
             await asyncio.gather(self.check_for_new_positions(),self.new_auto_square_off(),self.monitor_tp_sl())
