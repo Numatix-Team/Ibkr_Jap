@@ -47,112 +47,6 @@ class IBRKExcel:
         year,day,month = date.split('-')
         formatted_date = f"{year}{month.zfill(2)}"
         return str(formatted_date)
-    
-    # async def check_for_new_positions(self): # put this in async
-    #     if await self.check_excel_changes():
-    #         print("a change on the excel has been made")
-    #         last_row           = self.excel_data.iloc[-1]
-    #         self.symbol        = 'N225M'
-    #         self.exchange      = 'OSE.JPN' 
-    #         self.trigger_level = last_row['Trigger_Level_High_Low']
-    #         self.entry_type    = last_row['Entry_Type']
-    #         self.entry_strike  = last_row['Entry_Strike']
-    #         self.strike_type   = last_row['Strike_Type']
-    #         self.expiry        = str(last_row['Expiry'])
-    #         self.target        = last_row['Target']
-    #         self.stop_loss     = last_row['Stop_Loss']
-    #         self.qty           = last_row['Qty']
-    #         self.slicing       = last_row['Slicing']
-    #         self.time_interval = last_row['Time_Interval']
-    #         self.activation    = last_row['Activation']
-    #         if self.strike_type == 'CE':
-    #             self.side = 'SELL'
-    #         else:
-    #             self.side = 'BUY' 
-
-    #         if self.activation == 1:
-
-    #             datevar = self.expiry
-    #             date,timep = datevar.split(' ')
-    #             year,day,month = date.split('-')
-    #             formatted_date = f"{year}{month.zfill(2)}"
-    #             contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-    #             if self.strike_type == "PE" and self.trigger_level< await self.get_current_market_price_futures(contract):
-    #             # if self.strike_type == "PE":
-    #                 if self.entry_type == "LIMIT":
-    #                     for _ in range(0,int(self.qty/self.slicing),1):
-    #                         datevar = self.expiry
-    #                         date,timep = datevar.split(' ')
-    #                         year,day,month = date.split('-')
-    #                         formatted_date = f"{year}{month.zfill(2)}"
-    #                         # print(formatted_date)
-    #                         self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-    #                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
-    #                         # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
-    #                         self.order.account = 'DU9727656'
-    #                         self.order.transmit = True
-    #                         self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-    #                         print(self.order_details)
-    #                         print("The order has been placed")
-    #                         # time.sleep(self.time_interval)
-    #                         await asyncio.sleep(self.time_interval)
-    #                 else:
-    #                     for _ in range(0,int(self.qty/self.slicing),1):
-    #                         datevar = self.expiry
-    #                         date,timep = datevar.split(' ')
-    #                         year,day,month = date.split('-')
-    #                         formatted_date = f"{year}{month.zfill(2)}"
-    #                         print(formatted_date)
-    #                         self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-    #                         self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
-    #                         # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
-    #                         self.order.account = 'DU9727656'
-    #                         self.order.transmit = True
-    #                         self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-    #                         print(self.order_details)
-    #                         print("The order has been placed")
-    #                         # time.sleep(self.time_interval)
-    #                         await asyncio.sleep(self.time_interval)
-
-    #         elif self.strike_type == "CE" and self.trigger_level> await self.get_current_market_price_futures(contract):
-    #             # elif self.strike_type == "CE":
-    #                 if self.entry_type == "LIMIT":
-    #                     for _ in range(0,int(self.qty/self.slicing),1):
-    #                         datevar = self.expiry
-    #                         date,timep = datevar.split(' ')
-    #                         year,day,month = date.split('-')
-    #                         formatted_date = f"{year}{month.zfill(2)}"
-    #                         self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-    #                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
-    #                         # self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.qty)),lmtPrice=str(self.entry_strike)) # maybe change to self.qty/self.slicing
-    #                         self.order.account = 'DU9727656'
-    #                         self.order.transmit = True
-    #                         self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-    #                         print(self.order_details)
-    #                         print("The order has been placed")
-    #                         # time.sleep(self.time_interval)
-    #                         await asyncio.sleep(self.time_interval)
-    #                 else:
-    #                     for _ in range(0,int(self.qty/self.slicing),1):
-    #                         datevar = self.expiry
-    #                         date,timep = datevar.split(' ')
-    #                         year,day,month = date.split('-')
-    #                         formatted_date = f"{year}{month.zfill(2)}"
-    #                         print(formatted_date)
-    #                         self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-    #                         self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) # maybe change to self.qty/self.slicing
-    #                         # self.order         = MarketOrder(action=self.side,totalQuantity=str(int(self.qty))) # maybe change to self.qty/self.slicing
-    #                         self.order.account = 'DU9727656'
-    #                         self.order.transmit = True
-    #                         self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-    #                         print(self.order_details)
-    #                         print("The order has been placed")
-    #                         # time.sleep(self.time_interval)
-    #                         await asyncio.sleep(self.time_interval)
-    #         else:
-    #                 print("The trigger price has not being triggered")
-    #     else:
-    #         print("No changes in excel")
 
     async def check_for_new_positions(self): # put this in async
         if await self.check_excel_changes():
@@ -197,7 +91,29 @@ class IBRKExcel:
                                 self.order.account = 'DU9727656'
                                 self.order.transmit = True
                                 self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                print(self.order_details)
+                                await asyncio.sleep(3)
+                                
+                                if self.order_details.orderStatus.status != "Filled":
+                                    print("The order failed for the first time")
+                                    fail_status = self.client.cancelOrder(order=self.order_details)
+                                    print(fail_status)
+                                    self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                    await asyncio.sleep(3)
+                                    if self.order_details.orderStatus.status != "Filled":
+                                        print("The order failed for the second time")
+                                        fail_status = self.client.cancelOrder(order=self.order_details)
+                                        print(fail_status)
+                                        self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                        await asyncio.sleep(3)
+                                        if self.order_details.orderStatus.status != "Filled":
+                                            print("The order failed for the third time")
+                                            fail_status = self.client.cancelOrder(order=self.order_details)
+                                            print(fail_status)
+                                            self.order=MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)))
+                                            self.order_details = self.client.placeOrder(constract=self.contract,order=self.order)
+                                            print("finally a market order has been placed")
+                                
+                                # print(self.order_details)
                                 print("The order has been placed")
                                 self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
                                 with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -217,7 +133,9 @@ class IBRKExcel:
                                 self.order.account = 'DU9727656'
                                 self.order.transmit = True
                                 self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                print(self.order_details)
+                                await asyncio.sleep(3)
+                                
+                                # print(self.order_details)
                                 print("The order has been placed")
                                 self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
                                 with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -238,6 +156,28 @@ class IBRKExcel:
                                 self.order.account = 'DU9727656'
                                 self.order.transmit = True
                                 self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                await asyncio.sleep(3)
+                                
+                                if self.order_details.orderStatus.status != "Filled":
+                                    print("The order failed for the first time")
+                                    fail_status = self.client.cancelOrder(order=self.order_details)
+                                    print(fail_status)
+                                    self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                    await asyncio.sleep(3)
+                                    if self.order_details.orderStatus.status != "Filled":
+                                        print("The order failed for the second time")
+                                        fail_status = self.client.cancelOrder(order=self.order_details)
+                                        print(fail_status)
+                                        self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                        await asyncio.sleep(3)
+                                        if self.order_details.orderStatus.status != "Filled":
+                                            print("The order failed for the third time")
+                                            fail_status = self.client.cancelOrder(order=self.order_details)
+                                            print(fail_status)
+                                            self.order=MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)))
+                                            self.order_details = self.client.placeOrder(constract=self.contract,order=self.order)
+                                            print("finally a market order has been placed")
+                                
                                 print(self.order_details)
                                 print("The order has been placed")
                                 self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
@@ -258,6 +198,7 @@ class IBRKExcel:
                                 self.order.account = 'DU9727656'
                                 self.order.transmit = True
                                 self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                await asyncio.sleep(3)
                                 print(self.order_details)
                                 print("The order has been placed")
                                 self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
@@ -367,7 +308,7 @@ class IBRKExcel:
         df = self.df
         current_time = datetime.now().strftime("%H:%M")
         positions = self.client.positions()
-        if current_time == "10:20":
+        if current_time > "00:43":
             if positions:
                 for i in range(len(df)):
                     if self.df.loc[i,'Activation'] == -1:
