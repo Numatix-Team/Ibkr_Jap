@@ -76,8 +76,6 @@ class IBRKExcel:
                     year,day,month = date.split('-')
                     formatted_date = f"{year}{month.zfill(2)}"
                     contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                    print(await self.get_current_market_price_futures(contract))
-                    exit(0)
                     if self.strike_type == "PE" and self.trigger_level > await self.get_current_market_price_futures(contract):
                         if self.entry_type == "LIMIT":
                             for _ in range(0,int(self.qty/self.slicing),1):
@@ -93,13 +91,18 @@ class IBRKExcel:
                                     self.order.transmit = True
                                     print(f"Placing limit order,attempt {attempt+1}")
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                    print(self.order_details)
                                     await asyncio.sleep(2)
+                                    print(self.order_details.isDone())
 
-                                    if self.order_details.isDone() == "False":
-                                        self.client.cancelOrder(order=self.order_details.orderStatus)
+                                    if not self.order_details.isDone():
+                                        print("The cancelled order is :\n")
+                                        self.canceled_order_details = self.client.cancelOrder(order=self.order_details.orderStatus)
+                                        print(self.canceled_order_details)
                                         print("Order failed")
                                     else:
                                         print("Limit order placed successfully")
+                                        print(self.order_details)
                                         break
                                     
                                     attempt = attempt+1
@@ -122,7 +125,6 @@ class IBRKExcel:
                                 date,timep = datevar.split(' ')
                                 year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}"
-                                print(formatted_date)
                                 self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                                 self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) 
                                 self.order.account = 'DU9727656'
@@ -150,10 +152,12 @@ class IBRKExcel:
                                     self.order.transmit = True
                                     print(f"Placing limit order,attempt {attempt+1}")
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                    print(self.order_details)
                                     await asyncio.sleep(2)
 
                                     if self.order_details.isDone() == "False":
-                                        self.client.cancelOrder(order=self.order_details.orderStatus)
+                                        self.canceled_order_details = self.client.cancelOrder(order=self.order_details.orderStatus)
+                                        print(self.canceled_order_details)
                                         print("Order failed")
                                     else:
                                         print("Limit order placed successfully")
@@ -179,7 +183,6 @@ class IBRKExcel:
                                 date,timep = datevar.split(' ')
                                 year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}"
-                                print(formatted_date)
                                 self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                                 self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) 
                                 self.order.account = 'DU9727656'
@@ -210,7 +213,8 @@ class IBRKExcel:
             return ticker.close
         
         print(ticker.last)
-        return None
+        # return None
+        return 0.0
     
     async def show_details(self):
         result = self.ib.reqOpenOrders()
