@@ -46,6 +46,7 @@ class IBRKExcel:
         return str(formatted_date)
 
     async def check_for_new_positions(self): # put this in async
+
         if await self.check_excel_changes():
             print("a change on the excel has been made")
             length   = len(pd.read_excel(self.path, sheet_name='Sheet6'))
@@ -75,7 +76,9 @@ class IBRKExcel:
                     year,day,month = date.split('-')
                     formatted_date = f"{year}{month.zfill(2)}"
                     contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                    if self.strike_type == "PE" and self.trigger_level< await self.get_current_market_price_futures(contract):
+                    print(await self.get_current_market_price_futures(contract))
+                    exit(0)
+                    if self.strike_type == "PE" and self.trigger_level > await self.get_current_market_price_futures(contract):
                         if self.entry_type == "LIMIT":
                             for _ in range(0,int(self.qty/self.slicing),1):
                                 datevar = self.expiry
@@ -83,23 +86,31 @@ class IBRKExcel:
                                 year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}"
                                 self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                                self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) 
-                                self.order.account = 'DU9727656'
-                                self.order.transmit = True
-                                print("The first placed order ")
-                                self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                await asyncio.sleep(3)
-                                print(self.order_details)
-                                if self.order_details.orderStatus.status != "Filled":
-                                    print("The order failed for the first time")
-                                    fail_status = self.client.cancelOrder(order=self.order_details.orderStatus)
-                                    print(fail_status)
-                                    self.order=MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)))
-                                    self.final_order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                    print(self.final_order_details)
-                                    print("The final order has been placed")
+                                attempt = 0
+                                while attempt<3:
+                                    self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) 
+                                    self.order.account = 'DU9727656'
+                                    self.order.transmit = True
+                                    print(f"Placing limit order,attempt {attempt+1}")
+                                    self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                    await asyncio.sleep(2)
+
+                                    if self.order_details.isDone() == "False":
+                                        self.client.cancelOrder(order=self.order_details.orderStatus)
+                                        print("Order failed")
+                                    else:
+                                        print("Limit order placed successfully")
+                                        break
                                     
-                                print("The order has been placed")
+                                    attempt = attempt+1
+                                
+                                if attempt == 3:
+                                    print("Limit order failed thrice placing market order")
+                                    self.order = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)))
+                                    self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                    print(self.order_details)
+                                    print("Market order placed")
+
                             self.excel_data.loc[i,'Activation'] = -1 
                             with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                                 self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
@@ -119,12 +130,12 @@ class IBRKExcel:
                                 self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                                 await asyncio.sleep(3)
                                 print("The order has been placed")
-                                self.excel_data.loc[i,'Activation'] = -1 
-                                with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                                    self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
-                                await asyncio.sleep(self.time_interval)
+                            self.excel_data.loc[i,'Activation'] = -1 
+                            with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                                self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                            await asyncio.sleep(self.time_interval)
 
-                    elif self.strike_type == "CE" and self.trigger_level> await self.get_current_market_price_futures(contract):
+                    elif self.strike_type == "CE" and self.trigger_level < await self.get_current_market_price_futures(contract):
                         if self.entry_type == "LIMIT":
                             for _ in range(0,int(self.qty/self.slicing),1):
                                 datevar = self.expiry
@@ -132,28 +143,30 @@ class IBRKExcel:
                                 year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}"
                                 self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                                self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) 
-                                self.order.account = 'DU9727656'
-                                self.order.transmit = True
-                                self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                await asyncio.sleep(3)
-                                
-                                if self.order_details.orderStatus.status != "Filled":
-                                    print("The order failed for the first time")
-                                    # fail_status = self.client.cancelOrder(order=self.order_details.orderStatus,manualCancelOrderTime='2s')
-                                    fail_status = self.client.cancelOrder(order=self.order_details.orderStatus)
-                                    print(fail_status)
+                                attempt = 0
+                                while attempt<3:
+                                    self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) 
+                                    self.order.account = 'DU9727656'
+                                    self.order.transmit = True
+                                    print(f"Placing limit order,attempt {attempt+1}")
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                    await asyncio.sleep(3)
-                                    if self.order_details.orderStatus.status != "Filled":
-                                        fail_status = self.client.cancelOrder(order=self.order_details.orderStatus)
-                                        print(fail_status)
-                                        self.order=MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)))
-                                        self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                        print("finally a market order has been placed")
-                                        print(self.order_details)
-                                        print("The order has been placed")
-                                        exit(0)
+                                    await asyncio.sleep(2)
+
+                                    if self.order_details.isDone() == "False":
+                                        self.client.cancelOrder(order=self.order_details.orderStatus)
+                                        print("Order failed")
+                                    else:
+                                        print("Limit order placed successfully")
+                                        break
+                                    
+                                    attempt = attempt+1
+                                
+                                if attempt == 3:
+                                    print("Limit order failed thrice placing market order")
+                                    self.order = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)))
+                                    self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
+                                    print(self.order_details)
+                                    print("Market order placed")
 
                             self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
                             with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -175,10 +188,10 @@ class IBRKExcel:
                                 await asyncio.sleep(3)
                                 print(self.order_details)
                                 print("The order has been placed")
-                                self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
-                                with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                                    self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
-                                await asyncio.sleep(self.time_interval)
+                            self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
+                            with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                                self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                            await asyncio.sleep(self.time_interval)
                     else:
                         print("The trigger price has not being triggered")
         else:
