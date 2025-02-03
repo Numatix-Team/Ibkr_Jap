@@ -76,7 +76,12 @@ class IBRKExcel:
                     year,day,month = date.split('-')
                     formatted_date = f"{year}{month.zfill(2)}"
                     contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
-                    if self.strike_type == "PE" and self.trigger_level > await self.get_current_market_price_futures(contract):
+                    print(self.trigger_level)
+                    print(await self.get_current_market_price_futures(contract)) # need to be fix the price is not giving - fix with paper_trading_account.
+                    print(self.entry_type)
+                    print(self.strike_type)
+                    # if self.strike_type == "PE" and self.trigger_level < await self.get_current_market_price_futures(contract):
+                    if self.strike_type == "PE" and self.trigger_level <= await self.get_current_market_price_futures(contract):
                         if self.entry_type == "LIMIT":
                             for _ in range(0,int(self.qty/self.slicing),1):
                                 datevar = self.expiry
@@ -111,8 +116,8 @@ class IBRKExcel:
                                     print("Limit order failed thrice placing market order")
                                     self.order = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)))
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                    print(self.order_details)
                                     print("Market order placed")
+                                    print(self.order_details)
 
                             self.excel_data.loc[i,'Activation'] = -1 
                             with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -137,7 +142,7 @@ class IBRKExcel:
                                 self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
                             await asyncio.sleep(self.time_interval)
 
-                    elif self.strike_type == "CE" and self.trigger_level < await self.get_current_market_price_futures(contract):
+                    elif self.strike_type == "CE" and self.trigger_level >= await self.get_current_market_price_futures(contract):
                         if self.entry_type == "LIMIT":
                             for _ in range(0,int(self.qty/self.slicing),1):
                                 datevar = self.expiry
@@ -154,13 +159,16 @@ class IBRKExcel:
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                                     print(self.order_details)
                                     await asyncio.sleep(2)
+                                    print(self.order_details.isDone())
 
-                                    if self.order_details.isDone() == "False":
+                                    if not self.order_details.isDone():
+                                        print("The cancelled order is :\n")
                                         self.canceled_order_details = self.client.cancelOrder(order=self.order_details.orderStatus)
                                         print(self.canceled_order_details)
                                         print("Order failed")
                                     else:
                                         print("Limit order placed successfully")
+                                        print(self.order_details)
                                         break
                                     
                                     attempt = attempt+1
@@ -169,8 +177,8 @@ class IBRKExcel:
                                     print("Limit order failed thrice placing market order")
                                     self.order = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)))
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                    print(self.order_details)
                                     print("Market order placed")
+                                    print(self.order_details)
 
                             self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
                             with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -213,8 +221,8 @@ class IBRKExcel:
             return ticker.close
         
         print(ticker.last)
-        # return None
-        return 0.0
+        return None
+        # return 0.0
     
     async def show_details(self):
         result = self.ib.reqOpenOrders()
@@ -248,6 +256,7 @@ class IBRKExcel:
                 if current_price:
                     action = await self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
                     if action is not None:  
+                        print(f"An action of sell has been triggered in row {i}")
                         order = MarketOrder(action='SELL', totalQuantity=str(self.df['Qty'].iloc[i]))
                         order.account = 'DU9727656'
                         order.transmit = True
@@ -259,7 +268,6 @@ class IBRKExcel:
                         print("No profit/loss is triggered")
 
             elif self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Strike_Type'] == 'CE':
-
                 datevar = self.df.loc[i, 'Expiry']
                 print(datevar)
                 # Ensure datevar is a string in 'YYYY-MM-DD' format
@@ -272,6 +280,7 @@ class IBRKExcel:
                 if current_price:
                     action = await self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
                     if action is not None:  
+                        print(f"An action of buy has been triggered in row {i}")
                         order = MarketOrder(action='BUY', totalQuantity=str(self.df['Qty'].iloc[i]))
                         order.account = 'DU9727656'
                         order.transmit = True
@@ -289,7 +298,8 @@ class IBRKExcel:
         df = self.df
         current_time = datetime.now().strftime("%H:%M")
         positions = self.client.positions()
-        if current_time > "9:10":
+        # if current_time > "9:10":
+        if current_time > str(credentials.current_time):
             if positions:
                 for i in range(len(df)):
                     if self.df.loc[i,'Activation'] == -1:
