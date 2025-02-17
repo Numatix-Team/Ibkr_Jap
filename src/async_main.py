@@ -18,9 +18,7 @@ class IBRKExcel:
         self.orderbook       = []
         self.failed_orders   = []
         self.database_path   = credentials.database_path
-        # self.square_off_time = datetime.time(11, 45)  # Auto square-off time (11:45)
         self.current_time    = datetime.now().time()
-        # self.df = pd.read_excel(self.path, sheet_name="Sheet6")  # Replace with your file path
 
     async def check_excel_changes(self):
         new_data   = pd.read_excel(self.path, sheet_name='Sheet6')
@@ -46,7 +44,6 @@ class IBRKExcel:
         return str(formatted_date)
 
     async def check_for_new_positions(self): # put this in async
-
         if await self.check_excel_changes():
             print("a change on the excel has been made")
             length   = len(pd.read_excel(self.path, sheet_name='Sheet6'))
@@ -90,7 +87,8 @@ class IBRKExcel:
                                 formatted_date = f"{year}{month.zfill(2)}"
                                 self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                                 attempt = 0
-                                while attempt<3:
+                                # while attempt<3:
+                                while attempt<int(credentials.attempts):
                                     self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) 
                                     self.order.account = 'DU9727656'
                                     self.order.transmit = True
@@ -299,7 +297,7 @@ class IBRKExcel:
         current_time = datetime.now().strftime("%H:%M")
         positions = self.client.positions()
         # if current_time > "9:10":
-        if current_time > str(credentials.current_time):
+        if current_time >= str(credentials.current_time):
             if positions:
                 for i in range(len(df)):
                     if self.df.loc[i,'Activation'] == -1:
