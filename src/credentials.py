@@ -16,3 +16,15 @@ xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Al
 database_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\orderbook.csv"
 current_time = r"21:35"
 attempts = 3
+master = True
+
+
+"""
+user_time_default 0 - use the time_interval from the xlsx file
+user_time_default 1 - use user_time from creds file
+trade_type_default 0 - set the limitprice to the current price
+trade_type_default 1 - set the limitprice based on the bid and ask
+"""
+user_time_default = 1
+user_time = 3
+trade_type_default = 0
