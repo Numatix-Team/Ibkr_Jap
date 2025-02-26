@@ -95,7 +95,7 @@ class IBRKExcel:
                                     if credentials.trade_type_default == 0:
                                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) 
                                     else:
-                                        self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) 
+                                        self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(int((bid + (2**attempt - 1)*ask)/2**attempt))) 
                                     self.order.account = 'DU9727656'
                                     self.order.transmit = True
                                     print(f"Placing limit order,attempt {attempt+1}")
@@ -170,7 +170,7 @@ class IBRKExcel:
                                     if credentials.trade_type_default == 0:
                                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike))
                                     else:
-                                        self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike))  
+                                        self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(int((bid + (2**attempt - 1)*ask)/2**attempt)))  
                                     self.order.account = 'DU9727656'
                                     self.order.transmit = True
                                     print(f"Placing limit order,attempt {attempt+1}")
@@ -258,9 +258,6 @@ class IBRKExcel:
         test = self.ib.reqTickers(contract)
         for _,r in enumerate(test):
             bid,ask = r.bid,r.ask
-        
-        print(bid,end=" ")
-        print(ask)
         
         return bid,ask
     
