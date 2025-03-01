@@ -3,6 +3,7 @@ import asyncio
 import pandas as pd
 from datetime import datetime
 from ib_broker import *
+from g_sheet_me import *
 import credentials
 from openpyxl import load_workbook
 import nest_asyncio
@@ -15,15 +16,24 @@ class IBRKExcel:
         self.exchange        = 'OSE.JPN'
         self.path            = credentials.xlsx_path
         self.current_time    = datetime.now()
-        self.excel_data      = pd.read_excel(self.path, sheet_name='Sheet6') 
+        # self.excel_data      = pd.read_excel(self.path, sheet_name='Sheet6') 
+        # self.excel_data      = pd.read_csv(self.csv_url)
         self.length          = len(self.excel_data)
         self.orderbook       = []
         self.failed_orders   = []
         self.database_path   = credentials.database_path
         self.current_time    = datetime.now().time()
+        self.upper_trigger   = 10000000
+        self.lower_trigger   = -10000000
+        self.google_sheet_id = "16bpyg4FMgbd22_9FwOCrCqmDqg1Y7Ulff38w-xX1kXM"
+        self.sheet_name      = "Sheet1"  # Change this to your actual sheet name
+        self.csv_url         = f"https://docs.google.com/spreadsheets/d/{self.google_sheet_id}/gviz/tq?tqx=out:csv&sheet={self.sheet_name}" # done
+        self.excel_data      = pd.read_csv(self.csv_url)
+        self.g_sheet_final   = GSheet()
 
     async def check_excel_changes(self):
-        new_data   = pd.read_excel(self.path, sheet_name='Sheet6')
+        # new_data   = pd.read_excel(self.path, sheet_name='Sheet6')
+        new_data = pd.read_csv(self.csv_url)
         new_length = len(new_data)
 
         if new_length  != self.length:
@@ -40,15 +50,68 @@ class IBRKExcel:
         print(connection_print)
 
     async def format_date_ddmmyyyy(self,var):
-        date,timep = var.split(" ")
+        # date,timep = var.split(" ")
+        date = var
         year,day,month = date.split('-')
-        formatted_date = f"{year}{month.zfill(2)}"
+        # formatted_date = f"{year}{month.zfill(2)}"
+        formatted_date = f"{year}{month.zfill(2)}{day}"
         return str(formatted_date)
+    
+    async def close_all_if_trigger(self):
+        print("fn in close_all_if_trigger")
+        # self.df = pd.read_excel(self.path, sheet_name="Sheet6") 
+        self.df = pd.read_csv(self.csv_url)
+        df = self.df
+        for i in range(len(self.df)):
+            if(self.df.loc[i,'Target'] == "-" and self.df.loc[i,'Stop_Loss'] == "-" and self.df.loc[i,'Strike_type'] == "SELL"):
+                self.lower_trigger = self.df.loc[i,'Entry_Strike']
+            elif(self.df.loc[i,'Target'] == "-" and self.df.loc[i,'Stop_Loss'] == "-" and self.df.loc[i,'Strike_type'] == "BUY"):
+                self.upper_trigger = self.df.loc[i,'Entry_Strike']
+        
+        datevar = self.expiry
+        # date,timep = datevar.split(' ')
+        date = datevar
+        year,day,month = date.split('-')
+        # formatted_date = f"{year}{month.zfill(2)}"
+        formatted_date = f"{year}{month.zfill(2)}{day}"
+        contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
+
+        price = self.get_current_market_price_futures(contract)
+        positions = self.client.positions()
+
+        if price>self.upper_trigger or price>self.lower_trigger:
+            if positions:
+                for i in range(len(df)):
+                    if self.df.loc[i,'Activation'] == -1:
+                        datevar = self.df.loc[i, 'Expiry']
+                        # Ensure datevar is a string in 'YYYY-MM-DD' format
+                        datevar_str = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
+                        year,day,month = datevar_str.split('-')  # Ensure the date is in 'YYYY-MM-DD HH:MM:SS' format
+                        # formatted_date = f"{year}{month.zfill(2)}"
+                        formatted_date = f"{year}{month.zfill(2)}{day}"
+                        contract = Future(symbol='N225M', exchange='OSE.JPN', lastTradeDateOrContractMonth=str(formatted_date))
+                        if self.df.loc[i, 'Strike_Type'] == 'SELL':
+                            current_action = 'BUY'
+                        else:
+                            current_action = 'SELL'
+                        order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
+                        order.account = 'DU9727656'
+                        order.transmit = True
+                        result = self.client.placeOrder(contract, order)
+                        self.df.loc[i, 'Activation'] = 0
+            else:
+                print("Positions are empty")
+
+        # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        #     self.df.to_excel(writer, sheet_name="Sheet6", index=False)
+        self.g_sheet_final.update_entire_dataframe(self.df)
+
 
     async def check_for_new_positions(self): # put this in async
         if await self.check_excel_changes():
             print("a change on the excel has been made")
-            length   = len(pd.read_excel(self.path, sheet_name='Sheet6'))
+            # length   = len(pd.read_excel(self.path, sheet_name='Sheet6'))
+            length = len(pd.read_csv(self.csv_url))
             for i in range(length):
                 if self.excel_data.loc[i,'Activation'] == 1:
                     row           = self.excel_data.iloc[i]
@@ -65,28 +128,32 @@ class IBRKExcel:
                     self.slicing       = row['Slicing']
                     self.time_interval = row['Time_Interval']
                     self.activation    = row['Activation']
-                    if self.strike_type == 'CE':
+                    if self.strike_type == 'SELL':
                         self.side = 'SELL'
                     else:
                         self.side = 'BUY' 
 
                     datevar = self.expiry
-                    date,timep = datevar.split(' ')
+                    # date,timep = datevar.split(' ')
+                    date = datevar
                     year,day,month = date.split('-')
-                    formatted_date = f"{year}{month.zfill(2)}"
+                    # formatted_date = f"{year}{month.zfill(2)}"
+                    formatted_date = f"{year}{month.zfill(2)}{day}"
                     contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                     print(self.trigger_level)
                     print(await self.get_current_market_price_futures(contract)) # need to be fix the price is not giving - fix with paper_trading_account.
                     print(self.entry_type)
                     print(self.strike_type)
                     # if self.strike_type == "PE" and self.trigger_level < await self.get_current_market_price_futures(contract):
-                    if self.strike_type == "PE" and self.trigger_level <= await self.get_current_market_price_futures(contract):
+                    if self.strike_type == "BUY" and self.trigger_level <= await self.get_current_market_price_futures(contract):
                         if self.entry_type == "LIMIT":
                             for _ in range(0,int(self.qty/self.slicing),1):
                                 datevar = self.expiry
-                                date,timep = datevar.split(' ')
+                                # date,timep = datevar.split(' ')
+                                date = datevar
                                 year,day,month = date.split('-')
-                                formatted_date = f"{year}{month.zfill(2)}"
+                                # formatted_date = f"{year}{month.zfill(2)}"
+                                formatted_date = f"{year}{month.zfill(2)}{day}"
                                 self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                                 bid,ask = await self.get_bid_and_ask(contractmonth=formatted_date)
                                 attempt = 0
@@ -126,8 +193,10 @@ class IBRKExcel:
                                     print(self.order_details)
 
                             self.excel_data.loc[i,'Activation'] = -1 
-                            with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                                self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                            # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            #     self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                            self.g_sheet_final.update_entire_dataframe(self.excel_data)
+                            
                             if credentials.user_time_default == 0:
                                 await asyncio.sleep(self.time_interval)
                             else:
@@ -137,9 +206,11 @@ class IBRKExcel:
                         else:
                             for _ in range(0,int(self.qty/self.slicing),1):
                                 datevar = self.expiry
-                                date,timep = datevar.split(' ')
+                                # date,timep = datevar.split(' ')
+                                date = datevar
                                 year,day,month = date.split('-')
-                                formatted_date = f"{year}{month.zfill(2)}"
+                                # formatted_date = f"{year}{month.zfill(2)}"
+                                formatted_date = f"{year}{month.zfill(2)}{day}"
                                 self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                                 self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) 
                                 self.order.account = 'DU9727656'
@@ -153,21 +224,24 @@ class IBRKExcel:
                                     await asyncio.sleep(credentials.user_time)
                                 print("The order has been placed")
                             self.excel_data.loc[i,'Activation'] = -1 
-                            with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                                self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                            # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            #     self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                            self.g_sheet_final.update_entire_dataframe(self.excel_data)
                             if credentials.user_time_default == 0:
                                 await asyncio.sleep(self.time_interval)
                             else:
                                 print(f"sleeping for {credentials.user_time}")
                                 await asyncio.sleep(credentials.user_time)
 
-                    elif self.strike_type == "CE" and self.trigger_level >= await self.get_current_market_price_futures(contract):
+                    elif self.strike_type == "SELL" and self.trigger_level >= await self.get_current_market_price_futures(contract):
                         if self.entry_type == "LIMIT":
                             for _ in range(0,int(self.qty/self.slicing),1):
                                 datevar = self.expiry
-                                date,timep = datevar.split(' ')
+                                # date,timep = datevar.split(' ')
+                                date = datevar
                                 year,day,month = date.split('-')
-                                formatted_date = f"{year}{month.zfill(2)}"
+                                # formatted_date = f"{year}{month.zfill(2)}"
+                                formatted_date = f"{year}{month.zfill(2)}{day}"
                                 self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                                 bid,ask = await self.get_bid_and_ask(contractmonth=formatted_date)
                                 attempt = 0
@@ -205,8 +279,9 @@ class IBRKExcel:
                                     print(self.order_details)
 
                             self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
-                            with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                                self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                            # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            #     self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                            self.g_sheet_final.update_entire_dataframe(self.excel_data)
                             if credentials.user_time_default == 0:
                                 await asyncio.sleep(self.time_interval)
                             else:
@@ -216,9 +291,11 @@ class IBRKExcel:
                         else:
                             for _ in range(0,int(self.qty/self.slicing),1):
                                 datevar = self.expiry
-                                date,timep = datevar.split(' ')
+                                # date,timep = datevar.split(' ')
+                                date = datevar
                                 year,day,month = date.split('-')
-                                formatted_date = f"{year}{month.zfill(2)}"
+                                # formatted_date = f"{year}{month.zfill(2)}"
+                                formatted_date = f"{year}{month.zfill(2)}{day}"
                                 self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                                 self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) 
                                 self.order.account = 'DU9727656'
@@ -228,8 +305,10 @@ class IBRKExcel:
                                 print(self.order_details)
                                 print("The order has been placed")
                             self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
-                            with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                                self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                            # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                            #     self.excel_data.to_excel(writer, sheet_name="Sheet6", index=False)
+                            self.g_sheet_final.update_entire_dataframe(self.excel_data)
+
                             if credentials.user_time_default == 0:
                                 await asyncio.sleep(self.time_interval)
                             else:
@@ -270,13 +349,13 @@ class IBRKExcel:
         return bid,ask
     
     async def check_for_tp_sl(self, current_price, target_price,stop_loss,action): 
-        if action == 'PE':
+        if action == 'BUY':
             if current_price >= target_price:  # Target Price hit
                 return "SELL"
             elif current_price <= stop_loss:  # Stop Loss hit
                 return "SELL"
 
-        elif action == 'CE':
+        elif action == 'SELL':
             if current_price <= target_price:  # corrected
                 return "BUY"
             elif current_price >= stop_loss:  # corrected
@@ -284,14 +363,16 @@ class IBRKExcel:
         return None
 
     async def monitor_tp_sl(self): 
-        self.df = pd.read_excel(self.path, sheet_name="Sheet6")  
+        # self.df = pd.read_excel(self.path, sheet_name="Sheet6")  
+        self.df = pd.read_csv(self.csv_url)
         for i in range(len(self.df)):
-            if self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Strike_Type'] == 'PE':
+            if self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Strike_Type'] == 'BUY':
                 datevar = self.df.loc[i, 'Expiry']
                 # Ensure datevar is a string in 'YYYY-MM-DD' format
                 datevar_str = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
                 year,day,month = datevar_str.split('-')  # Ensure the date is in 'YYYY-MM-DD HH:MM:SS' format
-                formatted_date = f"{year}{month.zfill(2)}"
+                # formatted_date = f"{year}{month.zfill(2)}"
+                formatted_date = f"{year}{month.zfill(2)}{day}"
                 contract      = Future(symbol='N225M',exchange='OSE.JPN',lastTradeDateOrContractMonth=str(formatted_date))
                 current_price = await self.get_current_market_price_futures(contract)
                 if current_price:
@@ -308,14 +389,14 @@ class IBRKExcel:
                     else:
                         print("No profit/loss is triggered")
 
-            elif self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Strike_Type'] == 'CE':
+            elif self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Strike_Type'] == 'SELL':
                 datevar = self.df.loc[i, 'Expiry']
                 print(datevar)
                 # Ensure datevar is a string in 'YYYY-MM-DD' format
                 datevar_str = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
                 year,day,month = datevar_str.split('-')  # Ensure the date is in 'YYYY-MM-DD HH:MM:SS' format
-                formatted_date = f"{year}{month.zfill(2)}"
-
+                # formatted_date = f"{year}{month.zfill(2)}"
+                formatted_date = f"{year}{month.zfill(2)}{day}"
                 contract      = Future(symbol='N225M',exchange='OSE.JPN',lastTradeDateOrContractMonth=str(formatted_date)) # change this line
                 current_price = await self.get_current_market_price_futures(contract)
                 if current_price:
@@ -331,11 +412,13 @@ class IBRKExcel:
                     else:
                         print("No profit/loss is triggered")
 
-        with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-            self.df.to_excel(writer, sheet_name="Sheet6", index=False)
+        # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        #     self.df.to_excel(writer, sheet_name="Sheet6", index=False)
+        self.g_sheet_final.update_entire_dataframe(self.df)
     
     async def new_auto_square_off(self): # put this in async
-        self.df = pd.read_excel(self.path, sheet_name="Sheet6")
+        # self.df = pd.read_excel(self.path, sheet_name="Sheet6")
+        self.df = pd.read_csv(self.csv_url)
         df = self.df
         current_time = datetime.now().strftime("%H:%M")
         positions = self.client.positions()
@@ -348,9 +431,10 @@ class IBRKExcel:
                         # Ensure datevar is a string in 'YYYY-MM-DD' format
                         datevar_str = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
                         year,day,month = datevar_str.split('-')  # Ensure the date is in 'YYYY-MM-DD HH:MM:SS' format
-                        formatted_date = f"{year}{month.zfill(2)}"
+                        # formatted_date = f"{year}{month.zfill(2)}"
+                        formatted_date = f"{year}{month.zfill(2)}{day}"
                         contract = Future(symbol='N225M', exchange='OSE.JPN', lastTradeDateOrContractMonth=str(formatted_date))
-                        if self.df.loc[i, 'Strike_Type'] == 'CE':
+                        if self.df.loc[i, 'Strike_Type'] == 'SELL':
                             current_action = 'BUY'
                         else:
                             current_action = 'SELL'
@@ -364,14 +448,16 @@ class IBRKExcel:
         else:
             print("The time is not for closing the market is not yet")
 
-        with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-            self.df.to_excel(writer, sheet_name="Sheet6", index=False)
+        # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        #     self.df.to_excel(writer, sheet_name="Sheet6", index=False)
+        self.g_sheet_final.update_entire_dataframe(self.df)
 
     async def run(self):
         print("The process has started")
         await self.connection_show()
         while True:
-            await asyncio.gather(self.check_for_new_positions(),self.new_auto_square_off(),self.monitor_tp_sl())
+            # await asyncio.gather(self.check_for_new_positions(),self.new_auto_square_off(),self.monitor_tp_sl())
+            await asyncio.gather(self.check_for_new_positions(),self.new_auto_square_off(),self.monitor_tp_sl(),self.close_all_if_trigger())
             await asyncio.sleep(10) # keep this same
     
     async def test(self):
