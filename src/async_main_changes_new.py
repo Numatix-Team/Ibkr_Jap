@@ -70,7 +70,8 @@ class IBRKExcel:
                     datevar = self.expiry
                     date,timep = datevar.split(' ') # changed
                     # date = datevar
-                    print(date)
+                    print(f"date is on line 73 {date}")
+                    # print(date)
                     year,day,month = date.split('-')
                     print(f"year is {year}")
                     print(f"month is {month}")
@@ -106,6 +107,7 @@ class IBRKExcel:
                                 # successful_orders = 0
                                 # failed_orders = 0
                                 while attempt<int(credentials.attempts):
+                                    bid,ask = await self.get_bid_and_ask(contractmonth=formatted_date)
                                     if credentials.trade_type_default == 0:
                                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) 
                                     else:
@@ -116,7 +118,8 @@ class IBRKExcel:
                                     print(f"Placing limit order,attempt {attempt+1}")
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                                     print(self.order_details)
-                                    await asyncio.sleep(2) # keep this part same
+                                    # await asyncio.sleep(3) # keep this part same
+                                    await asyncio.sleep(credentials.pause_time)
                                     print(self.order_details.isDone())
 
                                     if not self.order_details.isDone():
@@ -157,8 +160,10 @@ class IBRKExcel:
                                 date,timep = datevar.split(' ')
                                 # date = datevar
                                 # year,day,month = date.split('-')
-                                print(date)
-                                day,month,year = date.split('-')
+                                print(f"date is on line 161 {date}")
+                                # print(date)
+                                # day,month,year = date.split('-')
+                                year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}"
                                 # formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
@@ -192,8 +197,10 @@ class IBRKExcel:
                                 date,timep = datevar.split(' ')
                                 # date = datevar
                                 # year,day,month = date.split('-')
-                                print(date)
-                                day,month,year = date.split('-')
+                                print(f"date is on line 197 {date}")
+                                # print(date)
+                                # day,month,year = date.split('-')
+                                year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}"
                                 # formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
@@ -202,6 +209,7 @@ class IBRKExcel:
                                 bid,ask = await self.get_bid_and_ask(contractmonth=formatted_date)
                                 attempt = 0
                                 while attempt<int(credentials.attempts):
+                                    bid,ask = await self.get_bid_and_ask(contractmonth=formatted_date)
                                     if credentials.trade_type_default == 0:
                                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike))
                                     else:
@@ -212,7 +220,8 @@ class IBRKExcel:
                                     print(f"Placing limit order,attempt {attempt+1}")
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                                     print(self.order_details)
-                                    await asyncio.sleep(2) # keep this same
+                                    # await asyncio.sleep(3) # keep this same
+                                    await asyncio.sleep(credentials.pause_time)
                                     print(self.order_details.isDone())
 
                                     if not self.order_details.isDone():
@@ -249,9 +258,11 @@ class IBRKExcel:
                                 datevar = self.expiry
                                 date,timep = datevar.split(' ')
                                 # date = datevar
-                                print(date)
+                                # print(date)
+                                print(f"date is on line 256 {date}")
                                 # year,day,month = date.split('-')
-                                day,month,year = date.split('-')
+                                # day,month,year = date.split('-')
+                                year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}"
                                 # formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
@@ -275,15 +286,8 @@ class IBRKExcel:
                                 await asyncio.sleep(credentials.user_time)
                     else:
                         print("The trigger price has not being triggered")
-        else:
-            print("No changes in excel")
-    
-    async def check_for_new_positions_night(self): # put this in async
-        if await self.check_excel_changes():
-            print("a change on the excel has been made")
-            length   = len(pd.read_excel(self.path, sheet_name=credentials.sheet_name))
-            for i in range(length):
-                if self.excel_data.loc[i,'Activation'] == 3: # a new order detected
+
+                elif self.excel_data.loc[i,'Activation'] == 3: # a new order detected
                     row           = self.excel_data.iloc[i]
                     self.symbol        = 'N225M'
                     self.exchange      = 'OSE.JPN' 
@@ -307,7 +311,8 @@ class IBRKExcel:
                     datevar = self.expiry
                     date,timep = datevar.split(' ') # changed
                     # date = datevar
-                    print(date)
+                    # print(date)
+                    print(f"date is on line 308 {date}")
                     year,day,month = date.split('-')
                     print(f"year is {year}")
                     print(f"month is {month}")
@@ -343,21 +348,27 @@ class IBRKExcel:
                                 # successful_orders = 0
                                 # failed_orders = 0
                                 while attempt<int(credentials.attempts):
+                                    bid,ask = await self.get_bid_and_ask(contractmonth=formatted_date)
                                     if credentials.trade_type_default == 0:
                                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike),tif='GTD') 
                                         expiry_date = (datetime.now() + timedelta(days=1)).strftime("%Y%m%d 23:59:59")
                                         self.order.goodTillDate = expiry_date
+                                        self.order.tif = "GTD"
+                                        
                                     else:
                                         print(f"using trade_type default {credentials.trade_type_default}")
                                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(int((bid + (2**attempt - 1)*ask)/2**attempt)),tif="GTD") 
                                         expiry_date = (datetime.now() + timedelta(days=1)).strftime("%Y%m%d 23:59:59")
                                         self.order.goodTillDate = expiry_date
+                                        self.order.tif = "GTD"
+
                                     self.order.account = 'DU9727656'
                                     self.order.transmit = True
                                     print(f"Placing limit order,attempt {attempt+1}")
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                                     print(self.order_details)
-                                    await asyncio.sleep(2) # keep this part same
+                                    # await asyncio.sleep(3) # keep this part same
+                                    await asyncio.sleep(credentials.pause_time)
                                     print(self.order_details.isDone())
 
                                     if not self.order_details.isDone():
@@ -378,9 +389,10 @@ class IBRKExcel:
                                 if attempt == credentials.attempts:
                                     print(f"Limit order failed {credentials.attempts} times placing market order")
                                     # self.contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),currency="JPY")
-                                    self.order = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)),tid="GTD")
+                                    self.order = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)),tif="GTD")
                                     expiry_date = (datetime.now() + timedelta(days=1)).strftime('%Y%m%d 23:59:59')
                                     self.order.goodTillDate = expiry_date
+                                    self.order.tif = 'GTD'
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                                     print("Market order placed")
                                     print(self.order_details)
@@ -400,8 +412,10 @@ class IBRKExcel:
                                 date,timep = datevar.split(' ')
                                 # date = datevar
                                 # year,day,month = date.split('-')
-                                print(date)
-                                day,month,year = date.split('-')
+                                # print(date)
+                                print(f"date is on line 402 {date}")
+                                # day,month,year = date.split('-')
+                                year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}"
                                 # formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
@@ -411,6 +425,7 @@ class IBRKExcel:
                                 self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) 
                                 expiry_date = (datetime.now() + timedelta(days=1)).strftime('%Y%m%d 23:59:59')
                                 self.order.goodTillDate = expiry_date
+                                self.order.tif = "GTD"
                                 self.order.account = 'DU9727656'
                                 self.order.transmit = True
                                 self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
@@ -437,31 +452,39 @@ class IBRKExcel:
                                 date,timep = datevar.split(' ')
                                 # date = datevar
                                 # year,day,month = date.split('-')
-                                print(date)
-                                day,month,year = date.split('-')
-                                formatted_date = f"{year}{month.zfill(2)}"
-                                # formatted_date = f"{year}{month.zfill(2)}{day}"
+                                # print(date)
+                                print(f"date is on line 440 {date}")
+                                # day,month,year = date.split('-')
+                                year,day,month = date.split('-')
+
+                                # formatted_date = f"{year}{month.zfill(2)}"
+                                formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
                                 # exit(0)
                                 self.contract       = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date))
                                 bid,ask = await self.get_bid_and_ask(contractmonth=formatted_date)
                                 attempt = 0
                                 while attempt<int(credentials.attempts):
+                                    bid,ask = await self.get_bid_and_ask(contractmonth=formatted_date)
                                     if credentials.trade_type_default == 0:
                                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike))
                                         expiry_date = (datetime.now() + timedelta(days=1)).strftime("%Y%m%d 23:59:59")
                                         self.order.goodTillDate = expiry_date
+                                        self.order.tif = "GTD"
                                     else:
                                         print(f"using trade_type default {credentials.trade_type_default}")
                                         self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(int((bid + (2**attempt - 1)*ask)/2**attempt)))  
                                         expiry_date = (datetime.now() + timedelta(days=1)).strftime("%Y%m%d 23:59:59")
                                         self.order.goodTillDate = expiry_date
+                                        self.order.tif = "GTD"
+
                                     self.order.account = 'DU9727656'
                                     self.order.transmit = True
                                     print(f"Placing limit order,attempt {attempt+1}")
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                                     print(self.order_details)
-                                    await asyncio.sleep(2) # keep this same
+                                    # await asyncio.sleep(3) # keep this same
+                                    await asyncio.sleep(credentials.pause_time)
                                     print(self.order_details.isDone())
 
                                     if not self.order_details.isDone():
@@ -482,6 +505,7 @@ class IBRKExcel:
                                     self.order = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)))
                                     expiry_date = (datetime.now() + timedelta(days=1)).strftime('%Y%m%d 23:59:59')
                                     self.order.goodTillDate = expiry_date
+                                    self.order.tif = "GTD"
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                                     print("Market order placed")
                                     print(self.order_details)
@@ -500,9 +524,11 @@ class IBRKExcel:
                                 datevar = self.expiry
                                 date,timep = datevar.split(' ')
                                 # date = datevar
-                                print(date)
+                                # print(date)
+                                print(f"date is on line 504 {date}")
                                 # year,day,month = date.split('-')
-                                day,month,year = date.split('-')
+                                # day,month,year = date.split('-')
+                                year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}"
                                 # formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
@@ -512,6 +538,7 @@ class IBRKExcel:
                                 self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) 
                                 expiry_date = (datetime.now() + timedelta(days=1)).strftime('%Y%m%d 23:59:59')
                                 self.order.goodTillDate = expiry_date
+                                self.order.tif = "GTD"
                                 self.order.account = 'DU9727656'
                                 self.order.transmit = True
                                 self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
@@ -530,7 +557,7 @@ class IBRKExcel:
                         print("The trigger price has not being triggered")
         else:
             print("No changes in excel")
-    
+                
     async def close_empty_trigger_fn_upper(self):
         print("fn in close_all_if_trigger")
         self.df = pd.read_excel(self.path, sheet_name=credentials.sheet_name) 
@@ -558,6 +585,19 @@ class IBRKExcel:
                 if positions:
                     for i in range(len(df)):
                         if self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Expiry'] == self.expiryvar:
+                            contract = Future(symbol='N225M', exchange='OSE.JPN', lastTradeDateOrContractMonth=str(formatted_date))
+                            if self.df.loc[i, 'Strike_Type'] == 'SELL':
+                                current_action = 'BUY'
+                            else:
+                                current_action = 'SELL'
+                            # contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),currency="JPY")
+                            order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
+                            order.account = 'DU9727656'
+                            order.transmit = True
+                            result = self.client.placeOrder(contract, order)
+                            self.df.loc[i, 'Activation'] = 0
+                            
+                        elif self.df.loc[i,'Activation'] == -3 and self.df.loc[i,'Expiry'] == self.expiryvar:
                             contract = Future(symbol='N225M', exchange='OSE.JPN', lastTradeDateOrContractMonth=str(formatted_date))
                             if self.df.loc[i, 'Strike_Type'] == 'SELL':
                                 current_action = 'BUY'
@@ -604,6 +644,19 @@ class IBRKExcel:
                 if positions:
                     for i in range(len(df)):
                         if self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Expiry'] == self.expiryvar:
+                            contract = Future(symbol='N225M', exchange='OSE.JPN', lastTradeDateOrContractMonth=str(formatted_date))
+                            if self.df.loc[i, 'Strike_Type'] == 'SELL':
+                                current_action = 'BUY'
+                            else:
+                                current_action = 'SELL'
+                            # contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),currency="JPY")
+                            order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
+                            order.account = 'DU9727656'
+                            order.transmit = True
+                            result = self.client.placeOrder(contract, order)
+                            self.df.loc[i, 'Activation'] = 0
+
+                        elif self.df.loc[i,'Activation'] == -3 and self.df.loc[i,'Expiry'] == self.expiryvar:
                             contract = Future(symbol='N225M', exchange='OSE.JPN', lastTradeDateOrContractMonth=str(formatted_date))
                             if self.df.loc[i, 'Strike_Type'] == 'SELL':
                                 current_action = 'BUY'
@@ -720,7 +773,7 @@ class IBRKExcel:
                         self.df.loc[i, 'Activation'] = 0  
                     else:
                         print("No profit/loss is triggered")
-                        
+            
             elif self.df.loc[i,'Activation'] == -3 and self.df.loc[i,'Strike_Type'] == 'BUY':
                 datevar = self.df.loc[i, 'Expiry']
                 # Ensure datevar is a string in 'YYYY-MM-DD' format
@@ -779,6 +832,7 @@ class IBRKExcel:
         current_time = datetime.now().strftime("%H:%M")
         positions = self.client.positions()
         # if current_time > "9:10":
+        print(f"current time is {current_time} and closing_time is {credentials.current_time}")
         if current_time >= str(credentials.current_time):
             if positions:
                 for i in range(len(df)):
@@ -801,6 +855,27 @@ class IBRKExcel:
                         order.transmit = True
                         result = self.client.placeOrder(contract, order)
                         self.df.loc[i, 'Activation'] = 0
+                    
+                    # elif self.df.loc[i,'Activation'] == -3:
+                    #     datevar = self.df.loc[i, 'Expiry']
+                    #     # Ensure datevar is a string in 'YYYY-MM-DD' format
+                    #     datevar_str = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
+                    #     year,day,month = datevar_str.split('-')  # Ensure the date is in 'YYYY-MM-DD HH:MM:SS' format
+                    #     formatted_date = f"{year}{month.zfill(2)}" # changed
+                    #     # formatted_date = f"{year}{month.zfill(2)}{day}"
+                    #     contract = Future(symbol='N225M', exchange='OSE.JPN', lastTradeDateOrContractMonth=str(formatted_date))
+                    #     if self.df.loc[i, 'Strike_Type'] == 'SELL':
+                    #         current_action = 'BUY'
+                    #     else:
+                    #         current_action = 'SELL'
+                    #     # contract = Future(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),currency="JPY")
+                    #     order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
+                        
+                    #     order.account = 'DU9727656'
+                    #     order.transmit = True
+                    #     result = self.client.placeOrder(contract, order)
+                    #     self.df.loc[i, 'Activation'] = 0
+                    
             else:
                 print("Positions are empty")
         else:
@@ -822,11 +897,3 @@ if __name__ == "__main__":
         asyncio.run(session.run())
     else:
         print("The bot is currently off make changes in the master.")
-
-# testing 
-
-# 1 - check new_auto_square_off and tp/sl - working
-# 2 - check close_empty_trigger_fn - 
-# 3 - check placing above/below buy/sell orders 
-
-# night orders - self.order.goodTillDate = dateutc.now() + timedelta("1d") - check the syntax and fix the format of the datetime if possible
