@@ -5,13 +5,12 @@ host = "127.0.0.1"
 xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\new_order_sheet.xlsx"
 xlsx_path_1 = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\options_order_sheet.xlsx"
 sheet_name = "Sheet1"
-current_time = r"22:13"
+current_time = r"20:00"
 pause_time = 5 # set this as default
 attempts = 3
-master = True
 user_time_default = 1
 user_time = 5
-trade_type_default = 0
+trade_type_default = 1
 
 """
 user_time_default 0 - use the time_interval from the xlsx file

@@ -939,8 +939,5 @@ class IBRKExcel:
             await asyncio.sleep(10) # keep this same
 
 if __name__ == "__main__":
-    if credentials.master is not False:
         session = IBRKExcel()
         asyncio.run(session.run())
-    else:
-        print("The bot is currently off make changes in the master.")
