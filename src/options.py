@@ -11,8 +11,8 @@ nest_asyncio.apply()
 
 class IBRKExcel:
     def __init__(self):
-        self.symbol          = 'N225M'
-        self.exchange        = 'OSE.JPN'
+        self.symbol          = credentials.symbol
+        self.exchange        = credentials.exchange
         self.path            = credentials.xlsx_path_1
         self.current_time    = datetime.now()
         self.excel_data      = pd.read_excel(self.path, sheet_name=credentials.sheet_name) 
@@ -61,7 +61,6 @@ class IBRKExcel:
                     self.activation_type    = row['Activation_Type']
                     self.activation         = row['Activation']
 
-                    # if self.strike_type == 'CE': # CHANGED THIS LINE
                     if self.strike_type == "SELL":
                         self.side = 'SELL'
                     else:
@@ -69,8 +68,7 @@ class IBRKExcel:
 
                     datevar = self.expiry
                     datevar = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
-                    date,timep = datevar.split(' ') # changed
-                    print(f"date is on line 73 {date}")
+                    date,timep = datevar.split(' ') 
                     year,day,month = date.split('-')
                     print(f"year is {year}")
                     print(f"month is {month}")
@@ -142,7 +140,6 @@ class IBRKExcel:
                                 datevar = self.expiry
                                 datevar = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
                                 date,timep = datevar.split(' ')
-                                print(f"date is on line 161 {date}")
                                 year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
@@ -172,7 +169,6 @@ class IBRKExcel:
                                 datevar = self.expiry
                                 datevar = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
                                 date,timep = datevar.split(' ')
-                                print(f"date is on line 197 {date}")
                                 year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
@@ -225,7 +221,6 @@ class IBRKExcel:
                                 datevar = self.expiry
                                 datevar = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
                                 date,timep = datevar.split(' ')
-                                print(f"date is on line 256 {date}")
                                 year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
@@ -524,7 +519,7 @@ class IBRKExcel:
         await self.connection_show()
         while True:
             await asyncio.gather(self.check_for_new_positions(),self.new_auto_square_off(),self.monitor_tp_sl(),self.close_empty_trigger_fn_lower(),self.close_empty_trigger_fn_upper())
-            await asyncio.sleep(7) # 
+            await asyncio.sleep(7) 
 
 if __name__ == "__main__":
     session = IBRKExcel()

@@ -1,5 +1,7 @@
 port = 7497
 host = "127.0.0.1"
+# account_no = "DU9727656"
+account_no = "DU7166729"
 symbol = "N225M"
 exchange = "OSE.JPN"
 # xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\Ibkr.xlsx"
