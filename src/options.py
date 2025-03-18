@@ -35,13 +35,15 @@ class IBRKExcel:
         host, port = credentials.host, credentials.port
         self.client = IB()
         self.ib = self.client
-        connection_print = self.client.connect(host=host,port=port,clientId=13,account='DU9727656',timeout=60)
+        # connection_print = self.client.connect(host=host,port=port,clientId=13,account='DU9727656',timeout=60)
+        connection_print = self.client.connect(host=host,port=port,clientId=13,account=credentials.account_no,timeout=60)
         print(connection_print)
 
     async def check_for_new_positions(self): # put this in async
         if await self.check_excel_changes():
             print("a change on the excel has been made")
             length   = len(pd.read_excel(self.path, sheet_name=credentials.sheet_name))
+
             for i in range(length):
                 if self.excel_data.loc[i,'Activation'] == 1: # a new order detected
                     row           = self.excel_data.iloc[i]
@@ -81,7 +83,9 @@ class IBRKExcel:
                     print(await self.get_current_market_price_futures(contract)) 
                     print(self.entry_type)
                     print(self.strike_type)
+
                     if self.strike_type == "BUY" and self.trigger_level <= await self.get_current_market_price_futures(contract): # current_price breaks through trigger_level
+                    # if self.strike_type == "BUY":
                         if self.entry_type == "LIMIT":
                             for _ in range(0,int(self.qty/self.slicing),1):
                                 datevar = self.expiry
@@ -92,20 +96,24 @@ class IBRKExcel:
                                 print(f"formatted_date is {formatted_date}")
                                 self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                 bid,ask = await self.get_bid_and_ask_options(contractmonth=formatted_date,entry_strike=self.entry_strike,option_strike_type=self.option_strike_type)
+                                print(f"the bid is {bid} and the ask is {ask}")
                                 attempt = 0
+
                                 while attempt<int(credentials.attempts):
                                     print(f"the current bid is {bid} and the current ask is {ask} and the order is being placed at {float(str(int((bid + (2**attempt - 1)*ask)/2**attempt)))}.")
-                                    if credentials.trade_type_default == 0:
-                                        self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) 
-                                    else:
-                                        print(f"using trade_type default {credentials.trade_type_default}")
-                                        self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(int((bid + (2**attempt - 1)*ask)/2**attempt))) 
-                                    self.order.account = 'DU9727656'
+                                    # if credentials.trade_type_default == 0:
+                                    #     self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike)) 
+                                    # else:
+                                    #     print(f"using trade_type default {credentials.trade_type_default}")
+                                    #     self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(int((bid + (2**attempt - 1)*ask)/2**attempt))) 
+                                    # self.order.account = 'DU9727656'
+                                    self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(int((bid + (2**attempt - 1)*ask)/2**attempt))) 
+                                    self.order.account = credentials.account_no
                                     self.order.transmit = True
                                     print(f"Placing limit order,attempt {attempt+1}")
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                                     print(self.order_details)
-                                    await asyncio.sleep(credentials.pause_time)
+                                    await asyncio.sleep(credentials.pause_time) # sleep before isDone
                                     print(self.order_details.isDone())
 
                                     if not self.order_details.isDone():
@@ -119,6 +127,7 @@ class IBRKExcel:
                                         break
                                     
                                     attempt = attempt+1
+
                                 if attempt == credentials.attempts:
                                     print(f"Limit order failed {credentials.attempts} times placing market order")
                                     self.order = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing)))
@@ -129,11 +138,13 @@ class IBRKExcel:
                             self.excel_data.loc[i,'Activation'] = -1 
                             with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                                 self.excel_data.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
-                            if credentials.user_time_default == 0:
-                                await asyncio.sleep(self.time_interval)
-                            else:
-                                print(f"sleeping for {credentials.user_time}")
-                                await asyncio.sleep(credentials.user_time)
+                            
+                            await asyncio.sleep(self.time_interval)
+                            # if credentials.user_time_default == 0:
+                            #     await asyncio.sleep(self.time_interval) # sleep at the end and placing and order
+                            # else:
+                            #     print(f"sleeping for {credentials.user_time}")
+                            #     await asyncio.sleep(credentials.user_time) # sleep at the end and placing an order
 
                         else:
                             for _ in range(0,int(self.qty/self.slicing),1):
@@ -145,26 +156,32 @@ class IBRKExcel:
                                 print(f"formatted_date is {formatted_date}")
                                 self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                 self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) 
-                                self.order.account = 'DU9727656'
+                                # self.order.account = 'DU9727656'
+                                self.order.account = credentials.account_no
                                 self.order.transmit = True
                                 self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                if credentials.user_time_default == 0:
-                                    await asyncio.sleep(self.time_interval)
-                                else:
-                                    print(f"sleep for {credentials.user_time}")
-                                    await asyncio.sleep(credentials.user_time)
+                                await asyncio.sleep(self.time_interval)
+                                # if credentials.user_time_default == 0:
+                                #     await asyncio.sleep(self.time_interval) # sleep at the end of placing an order
+                                # else:
+                                #     print(f"sleep for {credentials.user_time}")
+                                #     await asyncio.sleep(credentials.user_time) # sleep at the end of placing an order
                                 print("The order has been placed")
                             self.excel_data.loc[i,'Activation'] = -1 
                             with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                                 self.excel_data.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
-                            if credentials.user_time_default == 0:
-                                await asyncio.sleep(self.time_interval)
-                            else:
-                                print(f"sleeping for {credentials.user_time}")
-                                await asyncio.sleep(credentials.user_time)
+
+                            await asyncio.sleep(self.time_interval)
+                            # if credentials.user_time_default == 0:
+                            #     await asyncio.sleep(self.time_interval) # sleep after the order is done
+                            # else:
+                            #     print(f"sleeping for {credentials.user_time}")
+                            #     await asyncio.sleep(credentials.user_time) # sleep after the order is done 
 
                     elif self.strike_type == "SELL" and self.trigger_level >= await self.get_current_market_price_futures(contract):
+                    # elif self.strike_type == "SELL":
                         if self.entry_type == "LIMIT":
+
                             for _ in range(0,int(self.qty/self.slicing),1):
                                 datevar = self.expiry
                                 datevar = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
@@ -175,18 +192,21 @@ class IBRKExcel:
                                 self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                 bid,ask = await self.get_bid_and_ask_options(contractmonth=formatted_date,entry_strike=self.entry_strike,option_strike_type=self.option_strike_type)
                                 attempt = 0
+
                                 while attempt<int(credentials.attempts):
-                                    if credentials.trade_type_default == 0:
-                                        self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike))
-                                    else:
-                                        print(f"using trade_type default {credentials.trade_type_default}")
-                                        self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(int((bid + (2**attempt - 1)*ask)/2**attempt)))  
-                                    self.order.account = 'DU9727656'
+                                    # if credentials.trade_type_default == 0:
+                                    #     self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(self.entry_strike))
+                                    # else:
+                                    #     print(f"using trade_type default {credentials.trade_type_default}")
+                                    #     self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(int((bid + (2**attempt - 1)*ask)/2**attempt)))  
+                                    # self.order.account = 'DU9727656'
+                                    self.order         = LimitOrder(action=self.side,totalQuantity=str(int(self.slicing)),lmtPrice=str(int((bid + (2**attempt - 1)*ask)/2**attempt)))
+                                    self.order.account = credentials.account_no
                                     self.order.transmit = True
                                     print(f"Placing limit order,attempt {attempt+1}")
                                     self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
                                     print(self.order_details)
-                                    await asyncio.sleep(credentials.pause_time)
+                                    await asyncio.sleep(credentials.pause_time) # sleep to check whether the order is done or not
                                     print(self.order_details.isDone())
 
                                     if not self.order_details.isDone():
@@ -210,11 +230,13 @@ class IBRKExcel:
                             self.excel_data.loc[i,'Activation'] = -1 # now use excelwriter fn
                             with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                                 self.excel_data.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
-                            if credentials.user_time_default == 0:
-                                await asyncio.sleep(self.time_interval)
-                            else:
-                                print(f"sleeping for {credentials.user_time}")
-                                await asyncio.sleep(credentials.user_time)
+
+                            await asyncio.sleep(self.time_interval)
+                            # if credentials.user_time_default == 0:
+                            #     await asyncio.sleep(self.time_interval) # sleep after the order has been placed
+                            # else:
+                            #     print(f"sleeping for {credentials.user_time}")
+                            #     await asyncio.sleep(credentials.user_time) # sleep after the order has been placed
 
                         else:
                             for _ in range(0,int(self.qty/self.slicing),1):
@@ -226,20 +248,24 @@ class IBRKExcel:
                                 print(f"formatted_date is {formatted_date}")
                                 self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                 self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) 
-                                self.order.account = 'DU9727656'
+                                # self.order.account = 'DU9727656'
+                                self.order.account = credentials.account_no
                                 self.order.transmit = True
                                 self.order_details = self.client.placeOrder(contract=self.contract,order=self.order)
-                                await asyncio.sleep(3) 
+                                await asyncio.sleep(credentials.pause_time)  # sleep before showing order details
                                 print(self.order_details)
                                 print("The order has been placed")
+
                             self.excel_data.loc[i,'Activation'] = -1 
                             with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                                 self.excel_data.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
-                            if credentials.user_time_default == 0:
-                                await asyncio.sleep(self.time_interval)
-                            else:
-                                print(f"sleeping for {credentials.user_time}")
-                                await asyncio.sleep(credentials.user_time)
+
+                            # if credentials.user_time_default == 0:
+                            #     await asyncio.sleep(self.time_interval) # sleep after the order has been placed
+                            # else:
+                            #     print(f"sleeping for {credentials.user_time}")
+                            #     await asyncio.sleep(credentials.user_time) # sleep after the order has been placed
+                            await asyncio.sleep(self.time_interval)
                     else:
                         print("The trigger price has not being triggered")
                 
@@ -248,6 +274,7 @@ class IBRKExcel:
         self.df = pd.read_excel(self.path, sheet_name=credentials.sheet_name) 
         df = self.df
         self.expiryvar = None
+
         for i in range(len(self.df)):
             if(self.df.loc[i,'Target'] == "-" and self.df.loc[i,'Stop_Loss'] == "-" and self.df.loc[i,'Strike_Type'] == "BUY" and self.df.loc[i,'Activation'] == 1 and self.df.loc[i,'Activation_Type'] == 2):
                 print(f"upper trigger limit at index : {i} at {self.df.loc[i,'Entry_Strike']}")
@@ -276,7 +303,8 @@ class IBRKExcel:
                                 else:
                                     current_action = 'SELL'
                                 order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
-                                order.account = 'DU9727656'
+                                # order.account = 'DU9727656'
+                                order.account = credentials.account_no
                                 order.transmit = True
                                 result = self.client.placeOrder(contract, order)
                                 self.df.loc[i, 'Activation'] = 0
@@ -294,7 +322,8 @@ class IBRKExcel:
                                 else:
                                     current_action = 'SELL'
                                 order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
-                                order.account = 'DU9727656'
+                                # order.account = 'DU9727656'
+                                order.account = credentials.account_no
                                 order.transmit = True
                                 result = self.client.placeOrder(contract, order)
                                 self.df.loc[i, 'Activation'] = 0
@@ -311,6 +340,7 @@ class IBRKExcel:
         self.df = pd.read_excel(self.path, sheet_name=credentials.sheet_name) 
         df = self.df
         self.expiryvar = None
+
         for i in range(len(self.df)):
             if(self.df.loc[i,'Target'] == "-" and self.df.loc[i,'Stop_Loss'] == "-" and self.df.loc[i,'Strike_Type'] == "SELL" and self.df.loc[i,'Activation_Type'] == 2 and self.df.loc[i,'Activation'] == 1): # have the closing only if the activation is one 
                 print(f"lower trigger limit at index : {i} at {self.df.loc[i,'Entry_Strike']}")
@@ -323,6 +353,7 @@ class IBRKExcel:
                 price = await self.get_current_market_price_futures(contract)
                 positions = self.client.positions()
                 print(f"current price is {price}")
+
                 if price<self.lower_trigger:
                     if positions:
                         for i in range(len(df)):
@@ -339,7 +370,8 @@ class IBRKExcel:
                                 else:
                                     current_action = 'SELL'
                                 order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
-                                order.account = 'DU9727656'
+                                # order.account = 'DU9727656'
+                                order.account = credentials.account_no
                                 order.transmit = True
                                 result = self.client.placeOrder(contract, order)
                                 self.df.loc[i, 'Activation'] = 0
@@ -357,7 +389,8 @@ class IBRKExcel:
                                 else:
                                     current_action = 'SELL'
                                 order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
-                                order.account = 'DU9727656'
+                                # order.account = 'DU9727656'
+                                order.account = credentials.account_no
                                 order.transmit = True
                                 result = self.client.placeOrder(contract, order)
                                 self.df.loc[i, 'Activation'] = 0
@@ -434,17 +467,20 @@ class IBRKExcel:
                 datevar_str = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
                 year,day,month = datevar_str.split('-') 
                 formatted_date = f"{year}{month.zfill(2)}{day}"
+
                 self.entry_strike = self.df.loc[i,'Entry_Strike']
                 self.option_strike_type = self.df.loc[i,'Option_Type']
                 contract      = Future(symbol='N225M',exchange='OSE.JPN',lastTradeDateOrContractMonth=str(formatted_date))
                 current_price = await self.get_current_market_price_futures(contract)
+
                 if current_price:
                     action = await self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
                     if action is not None:  
                         print(f"An action of sell has been triggered in row {i}")
                         contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                         order = MarketOrder(action='SELL', totalQuantity=str(self.df['Qty'].iloc[i]))
-                        order.account = 'DU9727656'
+                        # order.account = 'DU9727656'
+                        order.account = credentials.account_no
                         order.transmit = True
                         result = self.client.placeOrder(contract, order)
                         print(result)
@@ -460,15 +496,19 @@ class IBRKExcel:
                 year,day,month = datevar_str.split('-')
                 formatted_date = f"{year}{month.zfill(2)}{day}"
 
+                self.entry_strike = self.df.loc[i,'Entry_Strike']
+                self.option_strike_type = self.df.loc[i,'Option_Type']
                 contract      = Future(symbol='N225M',exchange='OSE.JPN',lastTradeDateOrContractMonth=str(formatted_date))
                 current_price = await self.get_current_market_price_futures(contract)
-                contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+
                 if current_price:
                     action = await self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
                     if action is not None:  
                         print(f"An action of buy has been triggered in row {i}")
+                        contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                         order = MarketOrder(action='BUY', totalQuantity=str(self.df['Qty'].iloc[i]))
-                        order.account = 'DU9727656'
+                        # order.account = 'DU9727656'
+                        order.account = credentials.account_no
                         order.transmit = True
                         result = self.client.placeOrder(contract, order)
                         print(result)
@@ -502,7 +542,8 @@ class IBRKExcel:
                             current_action = 'SELL'
                         order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
                         
-                        order.account = 'DU9727656'
+                        # order.account = 'DU9727656'
+                        order.account = credentials.account_no
                         order.transmit = True
                         result = self.client.placeOrder(contract, order)
                         self.df.loc[i, 'Activation'] = 0
@@ -519,7 +560,7 @@ class IBRKExcel:
         await self.connection_show()
         while True:
             await asyncio.gather(self.check_for_new_positions(),self.new_auto_square_off(),self.monitor_tp_sl(),self.close_empty_trigger_fn_lower(),self.close_empty_trigger_fn_upper())
-            await asyncio.sleep(7) 
+            await asyncio.sleep(7)  # total sleep time don't change it .
 
 if __name__ == "__main__":
     session = IBRKExcel()
