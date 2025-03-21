@@ -1,29 +1,26 @@
+"""ports host and account"""
 port = 7497
 host = "127.0.0.1"
 # account_no = "DU9727656"
 account_no = "DU7166729"
+
+"""symbol and paths"""
 symbol = "N225M"
 exchange = "OSE.JPN"
-# xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\Ibkr.xlsx"
-# xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\order_sheet.xlsx"
-xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\new_order_sheet.xlsx"
-xlsx_path_1 = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\options_order_sheet.xlsx"
+# xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\new_order_sheet.xlsx"
+"""sheet path and sheet"""
+# xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\options_order_sheet.xlsx"
+xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\final_1.xlsx"
 sheet_name = "Sheet1"
-current_time = r"20:00"
-pause_time = 5 # set this as default
-attempts = 3
-user_time_default = 1
-user_time = 5
-trade_type_default = 1
 
+"""parameters for trading"""
+pause_time = 5 # set this as default - time before 
+attempts = 3 # attempts 
+closing_time = r"18:00"
 """
-user_time_default 0 - use the time_interval from the xlsx file
-user_time_default 1 - use user_time from creds file
-trade_type_default 0 - set the limitprice to the current price
-trade_type_default 1 - set the limitprice based on the bid and ask
+
 attempts - the number of times the bot would place the orders ex - 3
 current_time - the time at which the trading bot would stop ex - "22:00" # closes at 10PM
-master - used to turn the bot on / off (True/False)
 xlsx_path - path of the xlsx file (would also need to specify the sheet like Sheet1,Sheet6)
 port,host - used in login
 """
