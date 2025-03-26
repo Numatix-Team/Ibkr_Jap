@@ -94,7 +94,8 @@ class IBRKExcel:
                                 print(f"date is {date}")
                                 formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
-                                self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                self.contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                # self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                 bid,ask = await self.get_bid_and_ask_options(contractmonth=formatted_date,entry_strike=self.entry_strike,option_strike_type=self.option_strike_type)
                                 print(f"the bid is {bid} and the ask is {ask}")
                                 attempt = 0
@@ -142,7 +143,8 @@ class IBRKExcel:
                                 year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
-                                self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                self.contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                # self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                 self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) 
                                 self.order.account = credentials.account_no
                                 self.order.transmit = True
@@ -162,7 +164,8 @@ class IBRKExcel:
                                 year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
-                                self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                self.contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                # self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                 bid,ask = await self.get_bid_and_ask_options(contractmonth=formatted_date,entry_strike=self.entry_strike,option_strike_type=self.option_strike_type)
                                 attempt = 0
 
@@ -207,7 +210,8 @@ class IBRKExcel:
                                 year,day,month = date.split('-')
                                 formatted_date = f"{year}{month.zfill(2)}{day}"
                                 print(f"formatted_date is {formatted_date}")
-                                self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                self.contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                # self.contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                 self.order          = MarketOrder(action=self.side,totalQuantity=str(int(self.slicing))) 
                                 self.order.account = credentials.account_no
                                 self.order.transmit = True
@@ -248,14 +252,17 @@ class IBRKExcel:
                         print(f"price of {price} has breaked through upper trigger of : {self.upper_trigger} of expiryvar : {self.expiryvar}")
                         # if positions:
                         for i in range(len(df)):
-                            if self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Expiry'] == self.expiryvar:
+                            if self.df.loc[i,'Expiry'] == self.expiryvar and self.df.loc[i,'Activation_Type'] == 1:
+                                # print(f"The expiryvar is {self.df.loc[i,'Expiry']} and activation_type is {self.df.loc[i,'Activation_Type']} and activation is {self.df.loc[i,'Activation']}")
+                                if self.df.loc[i,'Activation'] == -1:
                                     datevar = self.df.loc[i,'Expiry']
                                     datevar_str = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
                                     year,day,month = datevar_str.split('-')
                                     formatted_date = f"{year}{month.zfill(2)}{day}"
                                     self.option_strike_type = self.df.loc[i,'Option_Type']
                                     self.entry_strike = self.df.loc[i,'Entry_Strike']
-                                    contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                    contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                    # contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                     if self.df.loc[i, 'Strike_Type'] == 'SELL':
                                         current_action = 'BUY'
                                     else:
@@ -267,9 +274,9 @@ class IBRKExcel:
                                     result = self.client.placeOrder(contract, order)
                                     self.df.loc[i, 'Activation'] = 0
                                 
-                            elif self.df.loc[i,'Activation_Type'] == 3:
-                                    # print(f"Activation type is {self.df.loc[i,'Activation_Type']} and Activation is {self.df.loc[i,'Activation']}")
-                                    if self.df.loc[i,'Activation'] == 1:
+                            elif self.df.loc[i,'Activation'] == 1:
+                                    print(f"Expiry is {self.expiryvar} Activation type is {self.df.loc[i,'Activation_Type']} and Activation is {self.df.loc[i,'Activation']}")
+                                    if self.df.loc[i,'Activation_Type'] == 3:
                                         print(f"Activation {self.df.loc[i,'Activation']} found on index {i} with expiry : {self.df.loc[i,'Expiry']} and expiry of the upper/lower limit is {self.expiryvar}")
                                         if self.df.loc[i,'Expiry'] == self.expiryvar:
                                             datevar = self.df.loc[i,'Expiry']
@@ -278,11 +285,12 @@ class IBRKExcel:
                                             formatted_date = f"{year}{month.zfill(2)}{day}"
                                             self.option_strike_type = self.df.loc[i,'Option_Type']
                                             self.entry_strike = self.df.loc[i,'Entry_Strike']
-                                            contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                            contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                            # contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                             if self.df.loc[i, 'Strike_Type'] == 'SELL':
-                                                current_action = 'BUY'
-                                            else:
                                                 current_action = 'SELL'
+                                            else:
+                                                current_action = 'BUY'
                                             order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
                                             # order.account = 'DU9727656'
                                             order.account = credentials.account_no
@@ -322,16 +330,19 @@ class IBRKExcel:
 
                     if price<=self.lower_trigger:
                         print(f"price of {price} has breaked through lower trigger of : {self.lower_trigger} of expiryvar : {self.expiryvar}")
-                        if positions:
-                            for i in range(len(df)):
-                                if self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Expiry'] == self.expiryvar:
+                        # if positions:
+                        for i in range(len(df)):
+                            if self.df.loc[i,'Activation'] == -1:
+                                # print(f"The activation is {self.df.loc[i,'Activation']} with expiry {self.df.loc[i,'Expiry']} and activation_type is {self.df.loc[i,'Activation_Type']}")
+                                if self.df.loc[i,'Activation_Type'] == 1:
                                     datevar = self.df.loc[i,'Expiry']
                                     datevar_str = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
                                     year,day,month = datevar_str.split('-')
                                     formatted_date = f"{year}{month.zfill(2)}{day}"
                                     self.option_strike_type = self.df.loc[i,'Option_Type']
                                     self.entry_strike = self.df.loc[i,'Entry_Strike']
-                                    contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                    contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                    # contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                                     if self.df.loc[i, 'Strike_Type'] == 'SELL':
                                         current_action = 'BUY'
                                     else:
@@ -342,23 +353,28 @@ class IBRKExcel:
                                     result = self.client.placeOrder(contract, order)
                                     self.df.loc[i, 'Activation'] = 0
 
-                                elif self.df.loc[i,'Activation'] == 3 and self.df.loc[i,'Expiry'] == self.expiryvar:
-                                    datevar = self.df.loc[i,'Expiry']
-                                    datevar_str = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
-                                    year,day,month = datevar_str.split('-')
-                                    formatted_date = f"{year}{month.zfill(2)}{day}"
-                                    self.option_strike_type = self.df.loc[i,'Option_Type']
-                                    self.entry_strike = self.df.loc[i,'Entry_Strike']
-                                    contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
-                                    if self.df.loc[i, 'Strike_Type'] == 'SELL':
-                                        current_action = 'BUY'
-                                    else:
-                                        current_action = 'SELL'
-                                    order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
-                                    order.account = credentials.account_no
-                                    order.transmit = True
-                                    result = self.client.placeOrder(contract, order)
-                                    self.df.loc[i, 'Activation'] = 0
+                            elif self.df.loc[i,'Activation'] == 1:
+                                print(f"The activation is {self.df.loc[i,'Activation']} and activation type is {self.df.loc[i,'Activation_Type']} with expiryvar {self.expiryvar} and expiry {self.df.loc[i,'Expiry']}")
+                                if self.df.loc[i,'Activation_Type'] == 3:
+                                    # print(f"The activation is {self.df.loc[i,'Activation']} and activation type is {self.df.loc[i,'Activation_Type']} with expiryvar {self.expiryvar} and expiry {self.df.loc[i,'Expiry']}")
+                                    if self.df.loc[i,'Expiry'] == self.expiryvar:
+                                        datevar = self.df.loc[i,'Expiry']
+                                        datevar_str = datevar.strftime('%Y-%m-%d') if isinstance(datevar, pd.Timestamp) else str(datevar)
+                                        year,day,month = datevar_str.split('-')
+                                        formatted_date = f"{year}{month.zfill(2)}{day}"
+                                        self.option_strike_type = self.df.loc[i,'Option_Type']
+                                        self.entry_strike = self.df.loc[i,'Entry_Strike']
+                                        contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                        # contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                                        if self.df.loc[i, 'Strike_Type'] == 'SELL':
+                                            current_action = 'SELL'
+                                        else:
+                                            current_action = 'BUY'
+                                        order = MarketOrder(action=current_action, totalQuantity=self.df.loc[i, 'Qty'])
+                                        order.account = credentials.account_no
+                                        order.transmit = True
+                                        result = self.client.placeOrder(contract, order)
+                                        self.df.loc[i, 'Activation'] = 0
                     else:
                         print("Positions are empty")
 
@@ -396,7 +412,7 @@ class IBRKExcel:
     
     async def get_bid_and_ask_options(self,contractmonth,entry_strike,option_strike_type):
         self.client.reqMarketDataType(3)
-        contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=contractmonth,strike=float(entry_strike),right=option_strike_type)
+        contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=contractmonth,strike=float(entry_strike),right=option_strike_type)
         test = self.ib.reqTickers(contract)
         for _,r in enumerate(test):
             bid,ask = r.bid,r.ask
@@ -437,7 +453,8 @@ class IBRKExcel:
                     action = await self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
                     if action is not None:  
                         print(f"An action of sell has been triggered in row {i}")
-                        contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                        contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                        # contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                         order = MarketOrder(action='SELL', totalQuantity=str(self.df['Qty'].iloc[i]))
                         order.account = credentials.account_no
                         order.transmit = True
@@ -464,7 +481,8 @@ class IBRKExcel:
                     action = await self.check_for_tp_sl(current_price, self.df['Target'].iloc[i],self.df['Stop_Loss'].iloc[i],self.df.loc[i,'Strike_Type'])
                     if action is not None:  
                         print(f"An action of buy has been triggered in row {i}")
-                        contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                        contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                        # contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                         order = MarketOrder(action='BUY', totalQuantity=str(self.df['Qty'].iloc[i]))
                         order.account = credentials.account_no
                         order.transmit = True
@@ -493,7 +511,8 @@ class IBRKExcel:
                         formatted_date = f"{year}{month.zfill(2)}{day}"
                         self.entry_strike = str(self.df.loc[i,'Entry_Strike'])
                         self.option_strike_type = str(self.df.loc[i,'Option_Type'])
-                        contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                        contract = Option(symbol=credentials.symbol2,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
+                        # contract = Option(symbol=self.symbol,exchange=self.exchange,lastTradeDateOrContractMonth=str(formatted_date),strike=float(self.entry_strike),right=self.option_strike_type)
                         if self.df.loc[i, 'Strike_Type'] == 'SELL':
                             current_action = 'BUY'
                         else:
