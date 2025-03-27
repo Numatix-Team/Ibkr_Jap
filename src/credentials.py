@@ -10,13 +10,14 @@ exchange = "OSE.JPN"
 symbol2 = "N225" # we trade on option with this while tracking N225M
 # xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\new_order_sheet.xlsx"
 """sheet path and sheet"""
-xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\final_2.xlsx"
-sheet_name = "Sheet1"
+# xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\final_2.xlsx"
+xlsx_path = r"C:\Users\vaibh\OneDrive\Desktop\New folder\Folder Python\Folder Algotrading\ibkr_excel\storage\final_2.csv"
+# sheet_name = "Sheet1"
 
 """parameters for trading"""
 pause_time = 5 # set this as default - time before 
 attempts = 3 # attempts 
-closing_time = r"01:33"
+closing_time = r"21:33"
 """
 
 attempts - the number of times the bot would place the orders ex - 3

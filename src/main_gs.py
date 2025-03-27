@@ -3,6 +3,7 @@ import asyncio
 import pandas as pd
 from datetime import datetime,timedelta
 from ib_broker import *
+from gsheet import *
 import credentials
 from openpyxl import load_workbook
 import nest_asyncio
@@ -11,27 +12,19 @@ nest_asyncio.apply()
 
 class IBRKExcel:
     def __init__(self):
+        self.Gsheet          = GSheet() # updated
         self.symbol          = credentials.symbol
         self.exchange        = credentials.exchange
         self.path            = credentials.xlsx_path
         self.current_time    = datetime.now()
         # self.excel_data      = pd.read_excel(self.path, sheet_name=credentials.sheet_name) 
-        self.excel_data      = pd.read_csv(self.path)
+        # self.excel_data      = pd.read_csv(self.path)
+        self.contract        = self.Gsheet.setUpGSheet()
+        self.excel_data      = self.Gsheet.get_sheet_data() # updated
         self.length          = len(self.excel_data)
         self.upper_trigger   = 100000000
         self.lower_trigger   = -100000000
         self.current_time    = datetime.now().time()
-
-    async def check_excel_changes(self):
-        # new_data   = pd.read_excel(self.path, sheet_name=credentials.sheet_name)
-        new_data    = pd.read_csv(self.path)
-        new_length = len(new_data)
-
-        if new_length  != self.length:
-            self.length     = new_length
-            self.excel_data = new_data
-            return True
-        return False
 
     async def connection_show(self) -> bool:
         host, port = credentials.host, credentials.port
@@ -41,10 +34,12 @@ class IBRKExcel:
         print(connection_print)
 
     async def check_for_new_positions(self): # put this in async
-        if await self.check_excel_changes():
+        # if await self.check_excel_changes():
+        if await self.Gsheet.google_sheet_changes_monitor(): # updated
             print("a change on the excel has been made")
             # length   = len(pd.read_excel(self.path, sheet_name=credentials.sheet_name))
-            length    = len(pd.read_csv(self.path))
+            # length    = len(pd.read_csv(self.path))
+            length = len(self.Gsheet.get_sheet_data()) # updated
 
             for i in range(length):
                 if self.excel_data.loc[i,'Activation'] == 1 and int(self.excel_data.loc[i,'Activation_Type']) != 2 and int(self.excel_data.loc[i,'Activation_Type']) != 3: # a new order detected
@@ -135,7 +130,8 @@ class IBRKExcel:
                                     print(self.order_details)
 
                             self.excel_data.loc[i,'Activation'] = -1 
-                            self.excel_data.to_csv(self.path)
+                            # self.excel_data.to_csv(self.path)
+                            self.Gsheet.updateData(self.excel_data) # updated
                             # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                             #     self.excel_data.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
 
@@ -156,7 +152,9 @@ class IBRKExcel:
                                 print("The order has been placed")
                                 await asyncio.sleep(self.time_interval)
                             self.excel_data.loc[i,'Activation'] = -1 
-                            self.excel_data.to_csv(self.path)
+                            # self.excel_data.to_csv(self.path)
+                            self.Gsheet.updateData(self.excel_data) # updated
+
                             # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                             #     self.excel_data.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
 
@@ -204,7 +202,9 @@ class IBRKExcel:
                                     print(self.order_details)
 
                             self.excel_data.loc[i,'Activation'] = -1 
-                            self.excel_data.to_csv(self.path)
+                            # self.excel_data.to_csv(self.path)
+                            self.Gsheet.updateData(self.excel_data) # updated
+
                             # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                             #     self.excel_data.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
 
@@ -228,7 +228,9 @@ class IBRKExcel:
                                 await asyncio.sleep(self.time_interval)
 
                             self.excel_data.loc[i,'Activation'] = -1 
-                            self.excel_data.to_csv(self.path)
+                            # self.excel_data.to_csv(self.path)
+                            self.Gsheet.updateData(self.excel_data) # updated
+
                             # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                             #     self.excel_data.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
                     else:
@@ -237,7 +239,8 @@ class IBRKExcel:
     async def close_empty_trigger_fn_upper(self):
         print("fn in close_all_if_trigger upper")
         # self.df = pd.read_excel(self.path, sheet_name=credentials.sheet_name) 
-        self.df = pd.read_csv(self.path)
+        # self.df = pd.read_csv(self.path)
+        self.df = self.Gsheet.get_sheet_data() # updated
         df = self.df
         self.expiryvar = None
 
@@ -308,7 +311,9 @@ class IBRKExcel:
                     else:
                         print("Positions are empty")
 
-                self.df.to_csv(self.path)
+                # self.df.to_csv(self.path)
+                self.Gsheet.updateData(self.excel_data) # updated
+
                 # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                 #     self.df.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
             # else:
@@ -317,7 +322,8 @@ class IBRKExcel:
     async def close_empty_trigger_fn_lower(self):
         print("fn in close_all_if_trigger lower")
         # self.df = pd.read_excel(self.path, sheet_name=credentials.sheet_name) 
-        self.df = pd.read_csv(self.path)
+        # self.df = pd.read_csv(self.path)
+        self.df = self.Gsheet.get_sheet_data() # updated
         df = self.df
         self.expiryvar = None
 
@@ -388,7 +394,9 @@ class IBRKExcel:
                     else:
                         print("Positions are empty")
 
-                self.df.to_csv(self.path)
+                # self.df.to_csv(self.path)
+                self.Gsheet.updateData(self.excel_data) # updated
+
                 # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
                 #     self.df.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
             # else:
@@ -447,7 +455,10 @@ class IBRKExcel:
         return None
 
     async def monitor_tp_sl(self): 
-        self.df = pd.read_excel(self.path, sheet_name=credentials.sheet_name)  
+        # self.df = pd.read_excel(self.path, sheet_name=credentials.sheet_name)  
+        # self.df = pd.read_csv(self.path)
+        self.df = self.Gsheet.get_sheet_data() # updated
+
         for i in range(len(self.df)):
             if self.df.loc[i,'Activation'] == -1 and self.df.loc[i,'Strike_Type'] == 'BUY' and self.df.loc[i,'Activation_Type'] == 1:
                 datevar = self.df.loc[i, 'Expiry']
@@ -503,11 +514,17 @@ class IBRKExcel:
                     else:
                         print("No profit/loss is triggered")
 
-        with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-            self.df.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
+        # self.df.to_csv(self.path)
+        self.Gsheet.updateData(self.excel_data) # updated
+
+        # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        #     self.df.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
     
     async def new_auto_square_off(self):
-        self.df = pd.read_excel(self.path, sheet_name=credentials.sheet_name)
+        # self.df = pd.read_excel(self.path, sheet_name=credentials.sheet_name)
+        # self.df = pd.read_csv(self.path)
+        self.df = self.Gsheet.get_sheet_data() # updated
+
         df = self.df
         current_time = datetime.now().strftime("%H:%M")
         positions = self.client.positions()
@@ -540,11 +557,15 @@ class IBRKExcel:
         else:
             print("The time is not for closing the market is not yet")
 
-        with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-            self.df.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
+        # self.df.to_csv(self.path)
+        self.Gsheet.updateData(self.excel_data) # updated
+
+        # with pd.ExcelWriter(self.path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        #     self.df.to_excel(writer, sheet_name=credentials.sheet_name, index=False)
 
     async def run(self):
         print("The process has started")
+        await self.Gsheet.setUpGSheet() # updated - used for login
         await self.connection_show()
         while True:
             await asyncio.gather(self.check_for_new_positions(),self.new_auto_square_off(),self.monitor_tp_sl(),self.close_empty_trigger_fn_lower(),self.close_empty_trigger_fn_upper())
